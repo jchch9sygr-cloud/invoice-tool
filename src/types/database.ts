@@ -1,0 +1,115 @@
+export interface User {
+  id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  user_id: string;
+  company_name: string | null;
+  address: string | null;
+  city: string | null;
+  zip: string | null;
+  phone: string | null;
+  email: string | null;
+  tax_number: string | null;
+  logo_url: string | null;
+  is_kleinunternehmer: boolean;
+  bank_name: string | null;
+  iban: string | null;
+  bic: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Customer {
+  id: string;
+  user_id: string;
+  name: string;
+  company: string | null;
+  address: string | null;
+  city: string | null;
+  zip: string | null;
+  email: string | null;
+  created_at: string;
+}
+
+export type DocumentType = 'invoice' | 'quote';
+export type DocumentStatus = 'draft' | 'sent' | 'paid' | 'cancelled';
+
+export interface Document {
+  id: string;
+  user_id: string;
+  customer_id: string;
+  type: DocumentType;
+  number: string;
+  date: string;
+  due_date: string | null;
+  status: DocumentStatus;
+  notes: string | null;
+  created_at: string;
+  customer?: Customer;
+  line_items?: LineItem[];
+}
+
+export interface LineItem {
+  id: string;
+  document_id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  position: number;
+}
+
+export interface Subscription {
+  id: string;
+  user_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  plan: 'lifetime' | 'monthly' | 'free';
+  status: 'active' | 'cancelled' | 'expired';
+  documents_count: number;
+  created_at: string;
+}
+
+// Form Types
+export interface ProfileFormData {
+  company_name: string;
+  address: string;
+  city: string;
+  zip: string;
+  phone: string;
+  email: string;
+  tax_number: string;
+  is_kleinunternehmer: boolean;
+  bank_name: string;
+  iban: string;
+  bic: string;
+}
+
+export interface CustomerFormData {
+  name: string;
+  company: string;
+  address: string;
+  city: string;
+  zip: string;
+  email: string;
+}
+
+export interface LineItemFormData {
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+}
+
+export interface DocumentFormData {
+  customer_id: string;
+  type: DocumentType;
+  date: string;
+  due_date: string;
+  notes: string;
+  line_items: LineItemFormData[];
+}
