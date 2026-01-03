@@ -49,7 +49,7 @@ export default function LoginPage() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            <div className="rounded-lg bg-red-900/50 border border-red-800 p-3 text-sm text-red-400">
               {error}
             </div>
           )}
@@ -78,9 +78,9 @@ export default function LoginPage() {
             Anmelden
           </Button>
 
-          <p className="text-center text-sm text-gray-600">
+          <p className="text-center text-sm text-gray-400">
             Noch kein Konto?{' '}
-            <Link href="/register" className="text-blue-600 hover:underline">
+            <Link href="/register" className="text-blue-400 hover:underline">
               Jetzt registrieren
             </Link>
           </p>

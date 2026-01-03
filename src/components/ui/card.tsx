@@ -9,7 +9,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'bg-white rounded-xl border border-gray-200 shadow-sm',
+          'bg-gray-900 rounded-xl border border-gray-800 shadow-sm',
           className
         )}
         {...props}
@@ -25,7 +25,7 @@ const CardHeader = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={cn('px-6 py-4 border-b border-gray-100', className)}
+        className={cn('px-6 py-4 border-b border-gray-800', className)}
         {...props}
       />
     );
@@ -39,7 +39,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingEleme
     return (
       <h3
         ref={ref}
-        className={cn('text-lg font-semibold text-gray-900', className)}
+        className={cn('text-lg font-semibold text-white', className)}
         {...props}
       />
     );

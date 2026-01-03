@@ -34,12 +34,12 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-200 bg-white">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-gray-800 bg-gray-950">
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-6">
-          <Zap className="h-6 w-6 text-blue-600" />
-          <span className="text-xl font-bold text-gray-900">RechnungsBlitz</span>
+        <div className="flex h-16 items-center gap-2 border-b border-gray-800 px-6">
+          <Zap className="h-6 w-6 text-blue-500" />
+          <span className="text-xl font-bold text-white">RechnungsBlitz</span>
         </div>
 
         {/* Navigation */}
@@ -53,8 +53,8 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-blue-600/20 text-blue-400'
+                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -65,10 +65,10 @@ export function Sidebar() {
         </nav>
 
         {/* Logout */}
-        <div className="border-t border-gray-200 p-3">
+        <div className="border-t border-gray-800 p-3">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-800 hover:text-white"
           >
             <LogOut className="h-5 w-5" />
             Ausloggen
