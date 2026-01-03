@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -34,20 +35,43 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
       if (error) {
+        console.error('Supabase Auth Error:', error);
         if (error.message.includes('already registered')) {
           setError('Diese E-Mail ist bereits registriert.');
+        } else if (error.message.includes('Email rate limit')) {
+          setError('Zu viele Anfragen. Bitte warte einen Moment.');
+        } else if (error.message.includes('Invalid email')) {
+          setError('Ungültige E-Mail-Adresse.');
+        } else if (error.message.includes('Signups not allowed')) {
+          setError('Registrierungen sind deaktiviert. Bitte Supabase Auth-Einstellungen prüfen.');
         } else {
-          setError('Registrierung fehlgeschlagen. Bitte versuche es erneut.');
+          setError(`Fehler: ${error.message}`);
         }
         return;
       }
 
+      // Check if email confirmation is required
+      if (data?.user?.identities?.length === 0) {
+        setError('Diese E-Mail ist bereits registriert.');
+        return;
+      }
+
+      // If user needs to confirm email
+      if (data?.user && !data?.session) {
+        setSuccess('Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.');
+        return;
+      }
+
+      // If session exists, user is logged in
       router.push('/dashboard');
       router.refresh();
     } catch {
@@ -67,6 +91,12 @@ export default function RegisterPage() {
           {error && (
             <div className="rounded-lg bg-red-900/50 border border-red-800 p-3 text-sm text-red-400">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="rounded-lg bg-green-900/50 border border-green-800 p-3 text-sm text-green-400">
+              {success}
             </div>
           )}
 
