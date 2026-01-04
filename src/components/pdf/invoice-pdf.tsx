@@ -11,22 +11,28 @@ import {
 import { formatCurrency, formatDate, getKleinunternehmerText, calculateTotal, calculateVat, calculateGrossTotal } from '@/lib/utils';
 import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@/types/database';
 
+// DIN 5008 Briefstandard - Maße in Punkten (1mm = 2.835pt)
+// Seitenränder: Links 25mm, Rechts 20mm, Oben 20mm, Unten 20mm
+// Anschriftfeld: 45mm vom oberen Rand, 85mm breit, 45mm hoch
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
-    paddingBottom: 80,
-    fontSize: 9,
+    paddingTop: 20 * 2.835,      // 20mm
+    paddingBottom: 20 * 2.835,   // 20mm
+    paddingLeft: 25 * 2.835,     // 25mm (DIN 5008)
+    paddingRight: 20 * 2.835,    // 20mm (DIN 5008)
+    fontSize: 10,
     fontFamily: 'Helvetica',
     color: '#1f2937',
   },
+  // Kopfbereich mit Logo rechts
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 10 * 2.835,    // 10mm Abstand
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     objectFit: 'contain',
   },
   companyInfo: {
@@ -34,49 +40,51 @@ const styles = StyleSheet.create({
     fontSize: 8,
   },
   companyName: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 700,
     marginBottom: 2,
   },
+  // Rücksendezeile (klein, über Empfänger)
   senderLine: {
-    fontSize: 7,
+    fontSize: 6,
     color: '#6b7280',
-    marginBottom: 6,
-    paddingBottom: 3,
+    marginBottom: 2 * 2.835,     // 2mm
+    paddingBottom: 1 * 2.835,    // 1mm
     borderBottomWidth: 0.5,
-    borderBottomColor: '#d1d5db',
+    borderBottomColor: '#9ca3af',
   },
-  recipientSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
+  // Empfängerfeld nach DIN 5008
   recipientBox: {
-    width: '55%',
+    width: 85 * 2.835,           // 85mm Breite (DIN 5008)
+    minHeight: 27.3 * 2.835,     // Mindesthöhe Anschriftzone
+    marginBottom: 4 * 2.835,     // 4mm Abstand
   },
-  dateBox: {
-    width: '40%',
+  // Ort, Datum rechts ausgerichtet
+  dateLineRight: {
     textAlign: 'right',
+    marginBottom: 8.46 * 2.835,  // 2 Leerzeilen vor Betreff
   },
-  title: {
-    fontSize: 12,
+  // Betreff (fett, nach DIN 5008)
+  subject: {
+    fontSize: 11,
     fontWeight: 700,
-    marginBottom: 10,
+    marginBottom: 8.46 * 2.835,  // 2 Leerzeilen nach Betreff
   },
-  introSection: {
-    marginBottom: 12,
+  // Brieftext
+  bodySection: {
+    marginBottom: 4.23 * 2.835,  // 1 Leerzeile ~ 4.23mm
   },
-  introText: {
-    fontSize: 9,
-    lineHeight: 1.4,
-    marginBottom: 3,
+  bodyText: {
+    fontSize: 10,
+    lineHeight: 1.5,             // DIN 5008: 1-zeilig mit 1,5 Zeilenabstand
+    marginBottom: 2,
   },
   text: {
-    fontSize: 9,
+    fontSize: 10,
     marginBottom: 1,
   },
   textBold: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
     marginBottom: 1,
   },
@@ -84,22 +92,26 @@ const styles = StyleSheet.create({
     fontSize: 8,
     marginBottom: 1,
   },
+  // Positionstabelle
   table: {
-    marginTop: 8,
+    marginTop: 4.23 * 2.835,     // 1 Leerzeile
+    marginBottom: 4.23 * 2.835,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#f3f4f6',
-    padding: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
     fontSize: 8,
     fontWeight: 600,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
     borderBottomWidth: 0.5,
     borderBottomColor: '#e5e7eb',
-    fontSize: 9,
+    fontSize: 10,
   },
   colDescription: {
     width: '45%',
@@ -120,78 +132,82 @@ const styles = StyleSheet.create({
     width: '15%',
     textAlign: 'right',
   },
+  // Summenblock rechts
   totalSection: {
-    marginTop: 12,
+    marginTop: 4.23 * 2.835,
     alignItems: 'flex-end',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: 180,
-    paddingVertical: 2,
+    paddingVertical: 3,
     paddingHorizontal: 6,
-    fontSize: 9,
+    fontSize: 10,
   },
   totalRowBorder: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: 180,
-    paddingVertical: 4,
+    paddingVertical: 5,
     paddingHorizontal: 6,
     borderTopWidth: 1,
     borderTopColor: '#1f2937',
-    marginTop: 2,
+    marginTop: 3,
   },
   totalLabel: {
-    fontSize: 9,
+    fontSize: 10,
   },
   totalLabelBold: {
     fontWeight: 700,
-    fontSize: 10,
+    fontSize: 11,
   },
   totalValue: {
-    fontSize: 9,
+    fontSize: 10,
   },
   totalValueBold: {
     fontWeight: 700,
-    fontSize: 10,
+    fontSize: 11,
   },
+  // Zahlungshinweis
   paymentInfo: {
-    marginTop: 12,
-    fontSize: 9,
+    marginTop: 8.46 * 2.835,     // 2 Leerzeilen
+    fontSize: 10,
+    lineHeight: 1.5,
   },
   kleinunternehmer: {
-    marginTop: 10,
+    marginTop: 4.23 * 2.835,
     fontSize: 8,
     color: '#6b7280',
     fontStyle: 'italic',
   },
+  // Grußformel (DIN 5008: 1 Leerzeile vor Gruß)
   closingSection: {
-    marginTop: 20,
+    marginTop: 8.46 * 2.835,     // 2 Leerzeilen
   },
   closingText: {
-    fontSize: 9,
-    marginBottom: 3,
+    fontSize: 10,
+    marginBottom: 4.23 * 2.835,  // 1 Leerzeile
   },
-  signature: {
-    marginTop: 12,
-    fontSize: 9,
+  greeting: {
+    fontSize: 10,
+    marginBottom: 12 * 2.835,    // 3 Leerzeilen für Unterschrift
   },
   signatureName: {
-    marginTop: 3,
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
   },
+  // Fußzeile
   footer: {
     position: 'absolute',
-    bottom: 25,
-    left: 40,
-    right: 40,
+    bottom: 15 * 2.835,          // 15mm vom unteren Rand
+    left: 25 * 2.835,
+    right: 20 * 2.835,
   },
   footerDivider: {
     borderTopWidth: 0.5,
     borderTopColor: '#d1d5db',
-    paddingTop: 8,
+    paddingTop: 6,
   },
   footerContent: {
     flexDirection: 'row',
@@ -229,7 +245,7 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header mit Logo und Absender */}
+        {/* Kopfbereich: Logo links, Absenderdaten rechts */}
         <View style={styles.header}>
           <View>
             {profile.logo_url && (
@@ -246,46 +262,41 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           </View>
         </View>
 
-        {/* Absenderzeile klein */}
-        <Text style={styles.senderLine}>
-          {profile.company_name} · {profile.address} · {profile.zip} {profile.city}
-        </Text>
-
-        {/* Empfänger und Datum */}
-        <View style={styles.recipientSection}>
-          <View style={styles.recipientBox}>
-            {customer ? (
-              <>
-                <Text style={styles.textBold}>{customer.name}</Text>
-                {customer.company && <Text style={styles.text}>{customer.company}</Text>}
-                {customer.address && <Text style={styles.text}>{customer.address}</Text>}
-                <Text style={styles.text}>{customer.zip} {customer.city}</Text>
-              </>
-            ) : (
-              <Text style={styles.text}>-</Text>
-            )}
-          </View>
-          <View style={styles.dateBox}>
-            <Text style={styles.text}>
-              {document.location && `${document.location}, `}{formatDate(document.date)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Betreff / Titel */}
-        <Text style={styles.title}>
-          {isInvoice ? 'Rechnung' : 'Angebot'} Nr. {document.number}
-        </Text>
-
-        {/* Anrede und Einleitungstext */}
-        <View style={styles.introSection}>
-          <Text style={styles.introText}>Sehr geehrte Damen und Herren,</Text>
-          {document.introduction_text && (
-            <Text style={styles.introText}>{document.introduction_text}</Text>
+        {/* Empfängeradresse (ohne Rücksendezeile für Fensterkuvert) */}
+        <View style={styles.recipientBox}>
+          {customer ? (
+            <>
+              <Text style={styles.textBold}>{customer.name}</Text>
+              {customer.company && <Text style={styles.text}>{customer.company}</Text>}
+              {customer.address && <Text style={styles.text}>{customer.address}</Text>}
+              <Text style={styles.text}>{customer.zip} {customer.city}</Text>
+            </>
+          ) : (
+            <Text style={styles.text}>—</Text>
           )}
         </View>
 
-        {/* Positionen-Tabelle */}
+        {/* Ort, Datum - rechts unter Empfänger */}
+        <View style={styles.dateLineRight}>
+          <Text style={styles.text}>
+            {document.location ? `${document.location}, ` : ''}{formatDate(document.date)}
+          </Text>
+        </View>
+
+        {/* Betreff (DIN 5008: fett, 2 Leerzeilen Abstand) */}
+        <Text style={styles.subject}>
+          {isInvoice ? 'Rechnung' : 'Angebot'} Nr. {document.number}
+        </Text>
+
+        {/* Brieftext: Anrede + Einleitung */}
+        <View style={styles.bodySection}>
+          <Text style={styles.bodyText}>Sehr geehrte Damen und Herren,</Text>
+          {document.introduction_text && (
+            <Text style={styles.bodyText}>{document.introduction_text}</Text>
+          )}
+        </View>
+
+        {/* Positionstabelle */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={styles.colDescription}>Beschreibung</Text>
@@ -307,7 +318,7 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           ))}
         </View>
 
-        {/* Summen: Netto, USt., Brutto */}
+        {/* Summenblock rechts */}
         <View style={styles.totalSection}>
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Nettobetrag:</Text>
@@ -325,32 +336,30 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           </View>
         </View>
 
-        {/* Zahlungshinweis / Anmerkungen */}
+        {/* Zahlungshinweis */}
         {document.notes && (
           <Text style={styles.paymentInfo}>{document.notes}</Text>
         )}
 
-        {/* Kleinunternehmer Hinweis */}
+        {/* Kleinunternehmer-Hinweis */}
         {profile.is_kleinunternehmer && (
           <Text style={styles.kleinunternehmer}>{getKleinunternehmerText()}</Text>
         )}
 
-        {/* Danksagung und Grußformel */}
+        {/* Grußformel (DIN 5008) */}
         <View style={styles.closingSection}>
           <Text style={styles.closingText}>
             {isInvoice
               ? 'Wir bedanken uns für die Zusammenarbeit.'
               : 'Wir freuen uns auf Ihre Rückmeldung.'}
           </Text>
-          <Text style={styles.signature}>mit freundlichen Grüßen</Text>
-          {document.sender_name ? (
-            <Text style={styles.signatureName}>{document.sender_name}</Text>
-          ) : (
-            <Text style={styles.signatureName}>{profile.company_name}</Text>
-          )}
+          <Text style={styles.greeting}>Mit freundlichen Grüßen</Text>
+          <Text style={styles.signatureName}>
+            {document.sender_name || profile.company_name}
+          </Text>
         </View>
 
-        {/* Footer mit Bankverbindung */}
+        {/* Fußzeile mit Kontakt + Bankverbindung */}
         <View style={styles.footer}>
           <View style={styles.footerDivider}>
             <View style={styles.footerContent}>

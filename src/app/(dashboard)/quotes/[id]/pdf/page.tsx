@@ -16,6 +16,7 @@ export default function QuotePDFPage() {
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [documentNumber, setDocumentNumber] = useState('');
+  const [customerName, setCustomerName] = useState('');
 
   useEffect(() => {
     generatePDF();
@@ -51,6 +52,7 @@ export default function QuotePDFPage() {
       }
 
       setDocumentNumber(document.number);
+      setCustomerName(document.customer?.name || '');
 
       const blob = await pdf(
         <InvoicePDF
@@ -79,7 +81,12 @@ export default function QuotePDFPage() {
       const url = window.URL.createObjectURL(blob);
       const link = window.document.createElement('a');
       link.href = url;
-      link.download = `${documentNumber}.pdf`;
+      // Dateiname: Angebots-Nr + Kundenname (Sonderzeichen entfernt)
+      const safeCustomerName = customerName.replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '').replace(/\s+/g, '_');
+      const fileName = safeCustomerName
+        ? `${documentNumber}_${safeCustomerName}.pdf`
+        : `${documentNumber}.pdf`;
+      link.download = fileName;
       window.document.body.appendChild(link);
       link.click();
       window.document.body.removeChild(link);
@@ -90,16 +97,17 @@ export default function QuotePDFPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-950">
+      {/* Header - Dunkles Theme */}
+      <div className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href={`/quotes/${params.id}`}>
-            <Button variant="ghost" size="sm">
+            <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-1" />
               Zurück
             </Button>
           </Link>
-          <h1 className="font-semibold">{documentNumber || 'PDF Vorschau'}</h1>
+          <h1 className="font-semibold text-white">{documentNumber || 'PDF Vorschau'}</h1>
         </div>
         <Button onClick={handleDownload} disabled={!pdfUrl}>
           <Download className="h-4 w-4 mr-1" />
@@ -107,11 +115,12 @@ export default function QuotePDFPage() {
         </Button>
       </div>
 
+      {/* PDF Viewer */}
       <div className="flex items-center justify-center p-8">
         {loading ? (
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-gray-500">PDF wird erstellt...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            <p className="text-gray-400">PDF wird erstellt...</p>
           </div>
         ) : pdfUrl ? (
           <iframe
@@ -119,7 +128,7 @@ export default function QuotePDFPage() {
             className="w-full max-w-4xl h-[calc(100vh-150px)] bg-white shadow-lg rounded-lg"
           />
         ) : (
-          <p className="text-gray-500">Fehler beim Erstellen der PDF.</p>
+          <p className="text-gray-400">Fehler beim Erstellen der PDF.</p>
         )}
       </div>
     </div>

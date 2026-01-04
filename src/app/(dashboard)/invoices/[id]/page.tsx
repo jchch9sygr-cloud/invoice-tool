@@ -64,91 +64,81 @@ export default async function InvoiceDetailPage({
       </Header>
 
       <div className="p-6 max-w-4xl">
-        {/* Preview Card - Brief-Standard */}
-        <Card>
-          <CardContent className="p-8">
-            {/* Header mit Logo und Absender */}
-            <div className="flex justify-between mb-8">
+        {/* Vorschau im DIN 5008 Stil - wie PDF */}
+        <Card className="bg-white">
+          <CardContent className="p-10 text-gray-900">
+            {/* Kopfbereich: Logo links, Absender rechts */}
+            <div className="flex justify-between mb-6">
               <div>
                 {profile?.logo_url && (
                   <img
                     src={profile.logo_url}
                     alt="Logo"
-                    className="h-20 w-auto object-contain"
+                    className="h-14 w-auto object-contain"
                   />
                 )}
               </div>
-              <div className="text-right text-sm text-gray-400">
-                <p className="font-semibold text-white">{profile?.company_name}</p>
+              <div className="text-right text-xs text-gray-600">
+                <p className="font-semibold text-gray-900 text-sm">{profile?.company_name}</p>
                 <p>{profile?.address}</p>
                 <p>{profile?.zip} {profile?.city}</p>
                 {profile?.phone && <p>Tel: {profile.phone}</p>}
                 {profile?.email && <p>{profile.email}</p>}
-                {profile?.tax_number && <p className="mt-1">St.-Nr.: {profile.tax_number}</p>}
+                {profile?.tax_number && <p>St.-Nr.: {profile.tax_number}</p>}
               </div>
             </div>
 
-            {/* Absenderzeile klein */}
-            <p className="text-xs text-gray-500 mb-2 border-b border-gray-700 pb-1">
-              {profile?.company_name} · {profile?.address} · {profile?.zip} {profile?.city}
+            {/* Empfängeradresse (ohne Rücksendezeile für Fensterkuvert) */}
+            <div className="w-[240px] min-h-[80px] mb-2">
+              {document.customer ? (
+                <div className="text-sm">
+                  <p className="font-semibold">{document.customer.name}</p>
+                  {document.customer.company && <p>{document.customer.company}</p>}
+                  {document.customer.address && <p>{document.customer.address}</p>}
+                  <p>{document.customer.zip} {document.customer.city}</p>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">—</p>
+              )}
+            </div>
+
+            {/* Ort, Datum - rechts unter Empfänger */}
+            <p className="text-right text-sm mb-6">
+              {document.location ? `${document.location}, ` : ''}{formatDate(document.date)}
             </p>
 
-            {/* Empfänger und Datum */}
-            <div className="grid grid-cols-2 gap-8 mb-8">
-              {/* Empfänger links */}
-              <div>
-                {document.customer ? (
-                  <div className="text-gray-200">
-                    <p className="font-medium text-white">{document.customer.name}</p>
-                    {document.customer.company && <p>{document.customer.company}</p>}
-                    <p>{document.customer.address}</p>
-                    <p>{document.customer.zip} {document.customer.city}</p>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">Kein Empfänger zugewiesen</p>
-                )}
-              </div>
-              {/* Ort und Datum rechts */}
-              <div className="text-right text-gray-200">
-                <p>
-                  {document.location && `${document.location}, `}
-                  {formatDate(document.date)}
-                </p>
-              </div>
-            </div>
-
-            {/* Betreff / Titel */}
-            <h2 className="text-xl font-bold text-white mb-6">
+            {/* Betreff (DIN 5008: fett) */}
+            <h2 className="text-base font-bold mb-6">
               Rechnung Nr. {document.number}
             </h2>
 
-            {/* Anrede und Einleitungstext */}
-            <div className="mb-6 text-gray-200">
-              <p className="mb-2">Sehr geehrte Damen und Herren,</p>
+            {/* Anrede und Einleitung */}
+            <div className="mb-4 text-sm leading-relaxed">
+              <p className="mb-1">Sehr geehrte Damen und Herren,</p>
               {document.introduction_text && (
                 <p>{document.introduction_text}</p>
               )}
             </div>
 
-            {/* Positionen-Tabelle */}
-            <table className="w-full mb-6">
+            {/* Positionstabelle */}
+            <table className="w-full mb-4 text-sm">
               <thead>
-                <tr className="bg-gray-800 text-left text-sm text-gray-300">
-                  <th className="p-3">Beschreibung</th>
-                  <th className="p-3 text-right">Menge</th>
-                  <th className="p-3 text-center">Einheit</th>
-                  <th className="p-3 text-right">Preis</th>
-                  <th className="p-3 text-right">Gesamt</th>
+                <tr className="bg-gray-100 text-left text-xs text-gray-700">
+                  <th className="p-2">Beschreibung</th>
+                  <th className="p-2 text-right">Menge</th>
+                  <th className="p-2 text-center">Einheit</th>
+                  <th className="p-2 text-right">Einzelpreis</th>
+                  <th className="p-2 text-right">Gesamt</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-200">
+              <tbody>
                 {document.line_items?.map((item: any) => (
-                  <tr key={item.id} className="border-b border-gray-700">
-                    <td className="p-3">{item.description}</td>
-                    <td className="p-3 text-right">{item.quantity}</td>
-                    <td className="p-3 text-center">{item.unit}</td>
-                    <td className="p-3 text-right">{formatCurrency(item.unit_price)}</td>
-                    <td className="p-3 text-right">
+                  <tr key={item.id} className="border-b border-gray-200">
+                    <td className="p-2">{item.description}</td>
+                    <td className="p-2 text-right">{item.quantity}</td>
+                    <td className="p-2 text-center">{item.unit}</td>
+                    <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
+                    <td className="p-2 text-right">
                       {formatCurrency(item.quantity * item.unit_price)}
                     </td>
                   </tr>
@@ -156,57 +146,69 @@ export default async function InvoiceDetailPage({
               </tbody>
             </table>
 
-            {/* Summen: Netto, USt., Brutto */}
+            {/* Summenblock rechts */}
             <div className="flex justify-end mb-6">
-              <div className="text-right space-y-1 min-w-[200px]">
-                <div className="flex justify-between text-gray-400">
-                  <span>Nettobetrag:</span>
-                  <span className="text-gray-200">{formatCurrency(netTotal)}</span>
+              <div className="text-right text-sm min-w-[180px]">
+                <div className="flex justify-between py-1">
+                  <span className="text-gray-600">Nettobetrag:</span>
+                  <span>{formatCurrency(netTotal)}</span>
                 </div>
                 {vatRate > 0 && (
-                  <div className="flex justify-between text-gray-400">
-                    <span>{vatRate}% USt.:</span>
-                    <span className="text-gray-200">{formatCurrency(vatAmount)}</span>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-600">{vatRate}% USt.:</span>
+                    <span>{formatCurrency(vatAmount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between pt-2 border-t border-gray-600 font-bold">
-                  <span className="text-gray-200">Gesamtbetrag:</span>
-                  <span className="text-white text-lg">{formatCurrency(grossTotal)}</span>
+                <div className="flex justify-between items-baseline pt-2 mt-1 border-t border-gray-900 font-bold text-base">
+                  <span>Gesamtbetrag:</span>
+                  <span>{formatCurrency(grossTotal)}</span>
                 </div>
               </div>
             </div>
 
             {/* Zahlungshinweis */}
             {document.notes && (
-              <div className="mb-6 text-gray-200">
-                <p>{document.notes}</p>
-              </div>
-            )}
-
-            {/* Bankverbindung */}
-            {(profile?.bank_name || profile?.iban) && (
-              <div className="mb-6 text-sm text-gray-400 bg-gray-800 p-4 rounded-lg">
-                <p className="font-medium text-gray-300 mb-1">Bankverbindung:</p>
-                {profile.bank_name && <p>{profile.bank_name}</p>}
-                {profile.iban && <p>IBAN: {profile.iban}</p>}
-                {profile.bic && <p>BIC: {profile.bic}</p>}
-              </div>
+              <p className="mb-4 text-sm leading-relaxed">{document.notes}</p>
             )}
 
             {/* Kleinunternehmer Hinweis */}
             {profile?.is_kleinunternehmer && (
-              <p className="text-sm text-gray-400 italic mb-4">
+              <p className="text-xs text-gray-500 italic mb-4">
                 {getKleinunternehmerText()}
               </p>
             )}
 
-            {/* Danksagung und Grußformel */}
-            <div className="text-gray-300 mt-6">
-              <p>Wir bedanken uns für die Zusammenarbeit.</p>
-              <p className="mt-4">mit freundlichen Grüßen</p>
-              <p className="mt-2 font-medium text-white">
+            {/* Grußformel */}
+            <div className="mt-6 text-sm">
+              <p className="mb-4">Wir bedanken uns für die Zusammenarbeit.</p>
+              <p className="mb-8">Mit freundlichen Grüßen</p>
+              <p className="font-semibold">
                 {document.sender_name || profile?.company_name}
               </p>
+            </div>
+
+            {/* Fußzeile */}
+            <div className="mt-10 pt-4 border-t border-gray-300">
+              <div className="flex justify-between text-[10px] text-gray-500">
+                <div>
+                  <p className="font-semibold">{profile?.company_name}</p>
+                  <p>{profile?.address}</p>
+                  <p>{profile?.zip} {profile?.city}</p>
+                </div>
+                <div>
+                  {profile?.phone && <p>Tel: {profile.phone}</p>}
+                  {profile?.email && <p>{profile.email}</p>}
+                  {profile?.tax_number && <p>St.-Nr.: {profile.tax_number}</p>}
+                </div>
+                {(profile?.bank_name || profile?.iban) && (
+                  <div className="text-right">
+                    <p className="font-semibold">Bankverbindung</p>
+                    {profile.bank_name && <p>{profile.bank_name}</p>}
+                    {profile.iban && <p>IBAN: {profile.iban}</p>}
+                    {profile.bic && <p>BIC: {profile.bic}</p>}
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

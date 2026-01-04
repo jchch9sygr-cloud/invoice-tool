@@ -23,6 +23,7 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const today = new Date().toISOString().split('T')[0];
   const dueDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
@@ -77,6 +78,7 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -130,6 +132,11 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
       router.refresh();
     } catch (error) {
       console.error('Error creating document:', error);
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Fehler beim Erstellen des Dokuments');
+      }
     } finally {
       setLoading(false);
     }
@@ -406,6 +413,12 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
       </Card>
 
       {/* Actions */}
+      {error && (
+        <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
+          <p className="font-medium">Fehler:</p>
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
       <div className="flex gap-3">
         <Button type="submit" loading={loading}>
           {type === 'invoice' ? 'Rechnung erstellen' : 'Angebot erstellen'}

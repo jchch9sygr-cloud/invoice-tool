@@ -16,7 +16,7 @@ CREATE TABLE profiles (
   email TEXT,
   tax_number TEXT,
   logo_url TEXT,
-  is_kleinunternehmer BOOLEAN DEFAULT true,
+  is_kleinunternehmer BOOLEAN DEFAULT false,
   bank_name TEXT,
   iban TEXT,
   bic TEXT,
@@ -51,6 +51,7 @@ CREATE TABLE documents (
   vat_rate DECIMAL(5,2) DEFAULT 20,
   location TEXT,
   introduction_text TEXT,
+  sender_name TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -73,6 +74,8 @@ CREATE TABLE subscriptions (
   stripe_subscription_id TEXT,
   plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'lifetime', 'monthly')),
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'expired')),
+  cancel_at_period_end BOOLEAN DEFAULT false,
+  current_period_end TIMESTAMP WITH TIME ZONE,
   documents_count INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

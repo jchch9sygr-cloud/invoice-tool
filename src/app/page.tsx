@@ -196,35 +196,54 @@ export default function LandingPage() {
       {/* Target Audience */}
       <section className="py-16 px-4 bg-gray-900">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center text-white mb-8">Für wen ist das?</h2>
-          <div className="grid md:grid-cols-2 gap-12">
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-gray-300">Passt für:</h3>
-              <ul className="space-y-2">
+          <h2 className="text-2xl font-bold text-center text-white mb-12">Für wen ist das?</h2>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Passt für - Grüne Karte */}
+            <div className="bg-gray-800 border border-green-500/30 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <Check className="h-5 w-5 text-green-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-white">Passt für dich</h3>
+              </div>
+              <ul className="space-y-4">
                 {[
-                  'Freelancer',
-                  'Nebenberuflich Selbstständige',
-                  'Kleinunternehmer (§19)',
-                  'Alle mit wenigen Rechnungen pro Monat',
+                  { title: 'Freelancer', desc: 'Designer, Entwickler, Berater' },
+                  { title: 'Nebenberuflich Selbstständig', desc: 'Nebeneinkommen, kleine Projekte' },
+                  { title: 'Kleinunternehmer', desc: 'Mit §19 UStG Regelung' },
+                  { title: 'Wenige Rechnungen', desc: 'Bis ca. 20 Rechnungen/Monat' },
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-gray-400">
-                    <Check className="h-4 w-4 text-green-400" />
-                    <span>{item}</span>
+                  <li key={i} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-white font-medium">{item.title}</p>
+                      <p className="text-gray-400 text-sm">{item.desc}</p>
+                    </div>
                   </li>
                 ))}
               </ul>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-gray-500">Passt nicht für:</h3>
-              <ul className="space-y-2 text-gray-500">
+
+            {/* Passt nicht für - Dezente Karte */}
+            <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
+                  <span className="text-gray-400 text-lg">—</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-400">Eher nicht geeignet</h3>
+              </div>
+              <ul className="space-y-4">
                 {[
-                  'Buchhaltungspflicht',
-                  'Elster-Anbindung nötig',
-                  'Viele Funktionen gewünscht',
+                  { title: 'Buchhaltungspflicht', desc: 'Du brauchst ein vollständiges Buchhaltungstool' },
+                  { title: 'Elster-Anbindung', desc: 'Direktübertragung ans Finanzamt nicht möglich' },
+                  { title: 'Viele Features', desc: 'Lagerverwaltung, Mahnwesen, etc.' },
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <span className="text-gray-600">-</span>
-                    <span>{item}</span>
+                  <li key={i} className="flex items-start gap-3">
+                    <span className="text-gray-500 shrink-0 mt-0.5">—</span>
+                    <div>
+                      <p className="text-gray-300">{item.title}</p>
+                      <p className="text-gray-500 text-sm">{item.desc}</p>
+                    </div>
                   </li>
                 ))}
               </ul>

@@ -68,8 +68,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error('Stripe checkout error:', error);
+
+    // Return more specific error messages for debugging
+    let errorMessage = 'Checkout fehlgeschlagen';
+    if (error instanceof Error) {
+      if (error.message.includes('No such price')) {
+        errorMessage = 'Stripe Preis-ID nicht konfiguriert. Bitte STRIPE_PRICE_LIFETIME und STRIPE_PRICE_MONTHLY in .env.local setzen.';
+      } else if (error.message.includes('Invalid API Key')) {
+        errorMessage = 'Ungültiger Stripe API-Schlüssel';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Failed to create checkout session' },
+      { error: errorMessage },
       { status: 500 }
     );
   }
