@@ -62,10 +62,10 @@ export default async function DashboardPage() {
       <div className="p-6 space-y-6">
         {/* Free tier notice */}
         {freeDocsRemaining !== null && (
-          <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-            <p className="text-sm text-blue-800">
+          <div className="rounded-lg bg-blue-900/30 border border-blue-800 p-4">
+            <p className="text-sm text-blue-300">
               <strong>Kostenloser Tarif:</strong> Du hast noch {freeDocsRemaining} von 3 kostenlosen Rechnungen/Angeboten.{' '}
-              <Link href="/settings" className="underline">Jetzt upgraden</Link>
+              <Link href="/settings" className="underline text-blue-400">Jetzt upgraden</Link>
             </p>
           </div>
         )}
@@ -74,14 +74,14 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {stats.map((stat) => (
             <Link key={stat.name} href={stat.href}>
-              <Card className="hover:border-blue-200 transition-colors cursor-pointer">
+              <Card className="hover:border-blue-600 transition-colors cursor-pointer">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-500">{stat.name}</p>
-                      <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                      <p className="text-sm text-gray-400">{stat.name}</p>
+                      <p className="text-3xl font-bold text-white">{stat.value}</p>
                     </div>
-                    <stat.icon className="h-10 w-10 text-gray-300" />
+                    <stat.icon className="h-10 w-10 text-gray-600" />
                   </div>
                 </CardContent>
               </Card>
@@ -96,35 +96,35 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {recentDocuments && recentDocuments.length > 0 ? (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-800">
                 {recentDocuments.map((doc) => (
                   <Link
                     key={doc.id}
                     href={`/${doc.type === 'invoice' ? 'invoices' : 'quotes'}/${doc.id}`}
-                    className="flex items-center justify-between py-3 hover:bg-gray-50 -mx-4 px-4 rounded-lg"
+                    className="flex items-center justify-between py-3 hover:bg-gray-800 -mx-4 px-4 rounded-lg transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       {doc.type === 'invoice' ? (
-                        <FileText className="h-5 w-5 text-gray-400" />
+                        <FileText className="h-5 w-5 text-blue-500" />
                       ) : (
-                        <FileCheck className="h-5 w-5 text-gray-400" />
+                        <FileCheck className="h-5 w-5 text-green-500" />
                       )}
                       <div>
-                        <p className="font-medium text-gray-900">{doc.number}</p>
-                        <p className="text-sm text-gray-500">
+                        <p className="font-medium text-white">{doc.number}</p>
+                        <p className="text-sm text-gray-400">
                           {doc.customer?.name || 'Kein Kunde'}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-500">{formatDate(doc.date)}</p>
+                      <p className="text-sm text-gray-400">{formatDate(doc.date)}</p>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                           doc.status === 'paid'
-                            ? 'bg-green-100 text-green-700'
+                            ? 'bg-green-900/50 text-green-400'
                             : doc.status === 'sent'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-700'
+                            ? 'bg-blue-900/50 text-blue-400'
+                            : 'bg-gray-700 text-gray-300'
                         }`}
                       >
                         {doc.status === 'draft' ? 'Entwurf' : doc.status === 'sent' ? 'Gesendet' : doc.status === 'paid' ? 'Bezahlt' : 'Storniert'}
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-500">Noch keine Dokumente erstellt.</p>
+                <p className="text-gray-400">Noch keine Dokumente erstellt.</p>
                 <Link href="/invoices/new">
                   <Button variant="outline" className="mt-4">
                     Erste Rechnung erstellen

@@ -35,11 +35,11 @@ export default async function QuotesPage() {
           <Card>
             <CardContent className="py-12">
               <div className="text-center">
-                <FileCheck className="mx-auto h-12 w-12 text-gray-300" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <FileCheck className="mx-auto h-12 w-12 text-gray-600" />
+                <h3 className="mt-4 text-lg font-medium text-white">
                   Noch keine Angebote
                 </h3>
-                <p className="mt-2 text-gray-500">
+                <p className="mt-2 text-gray-400">
                   Erstelle dein erstes Angebot in unter 2 Minuten.
                 </p>
                 <Link href="/quotes/new">

@@ -24,9 +24,11 @@ export default async function NewQuotePage() {
 
   const [
     { data: customers },
+    { data: profile },
     { count: quoteCount },
   ] = await Promise.all([
     supabase.from('customers').select('*').order('name'),
+    supabase.from('profiles').select('*').eq('user_id', user.id).single(),
     supabase.from('documents').select('*', { count: 'exact', head: true }).eq('type', 'quote'),
   ]);
 
@@ -37,6 +39,7 @@ export default async function NewQuotePage() {
         <DocumentForm
           type="quote"
           customers={customers || []}
+          profile={profile}
           documentCount={quoteCount || 0}
         />
       </div>

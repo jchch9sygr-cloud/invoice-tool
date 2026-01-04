@@ -24,9 +24,11 @@ export default async function NewInvoicePage() {
 
   const [
     { data: customers },
+    { data: profile },
     { count: invoiceCount },
   ] = await Promise.all([
     supabase.from('customers').select('*').order('name'),
+    supabase.from('profiles').select('*').eq('user_id', user.id).single(),
     supabase.from('documents').select('*', { count: 'exact', head: true }).eq('type', 'invoice'),
   ]);
 
@@ -37,6 +39,7 @@ export default async function NewInvoicePage() {
         <DocumentForm
           type="invoice"
           customers={customers || []}
+          profile={profile}
           documentCount={invoiceCount || 0}
         />
       </div>

@@ -26,30 +26,30 @@ export function CustomerList({ customers }: CustomerListProps) {
   return (
     <div className="grid gap-4">
       {customers.map((customer) => (
-        <Card key={customer.id} className="hover:border-gray-300 transition-colors">
+        <Card key={customer.id} className="hover:border-blue-600 transition-colors">
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-medium text-gray-900">{customer.name}</h3>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-medium text-white">{customer.name}</h3>
                 {customer.company && (
-                  <p className="text-sm text-gray-500">{customer.company}</p>
+                  <p className="text-sm text-gray-400">{customer.company}</p>
                 )}
-                <div className="mt-2 flex items-center gap-4 text-sm text-gray-500">
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-400">
                   {customer.email && (
                     <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {customer.email}
+                      <Mail className="h-3 w-3 text-gray-500" />
+                      <span className="text-gray-300">{customer.email}</span>
                     </span>
                   )}
                   {customer.city && (
                     <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {customer.zip} {customer.city}
+                      <MapPin className="h-3 w-3 text-gray-500" />
+                      <span className="text-gray-300">{customer.zip} {customer.city}</span>
                     </span>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ml-4">
                 <Link href={`/customers/${customer.id}/edit`}>
                   <Button variant="ghost" size="sm">
                     <Pencil className="h-4 w-4" />

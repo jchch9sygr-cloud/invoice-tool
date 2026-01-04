@@ -48,6 +48,9 @@ CREATE TABLE documents (
   due_date DATE,
   status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'paid', 'cancelled')),
   notes TEXT,
+  vat_rate DECIMAL(5,2) DEFAULT 20,
+  location TEXT,
+  introduction_text TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

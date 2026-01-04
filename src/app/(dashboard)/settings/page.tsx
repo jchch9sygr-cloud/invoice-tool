@@ -8,15 +8,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
 import { UpgradeButton } from '@/components/pricing/upgrade-button';
-import { Upload, Check, Zap, CheckCircle } from 'lucide-react';
+import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import type { Profile, Subscription } from '@/types/database';
+
+function formatDate(dateString: string | null): string {
+  if (!dateString) return '';
+  return new Date(dateString).toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
 
 export default function SettingsPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<Partial<Subscription> | null>(null);
   const [formData, setFormData] = useState<Partial<Profile>>({
     company_name: '',
@@ -26,7 +37,7 @@ export default function SettingsPage() {
     phone: '',
     email: '',
     tax_number: '',
-    is_kleinunternehmer: true,
+    is_kleinunternehmer: false,
     bank_name: '',
     iban: '',
     bic: '',
@@ -65,10 +76,37 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (!confirm('Möchtest du dein Abo wirklich kündigen? Du behältst den Zugang bis zum Ende der Laufzeit.')) {
+      return;
+    }
+
+    setCancelLoading(true);
+    try {
+      const response = await fetch('/api/stripe/cancel', { method: 'POST' });
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubscription((prev) => prev ? {
+          ...prev,
+          cancel_at_period_end: true,
+          current_period_end: data.period_end,
+        } : null);
+      } else {
+        alert('Fehler beim Kündigen: ' + data.error);
+      }
+    } catch {
+      alert('Ein Fehler ist aufgetreten.');
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSaved(false);
+    setLogoError(null);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -78,14 +116,18 @@ export default function SettingsPage() {
 
       // Upload logo if changed
       if (logoFile) {
-        const fileExt = logoFile.name.split('.').pop();
-        const filePath = `${user.id}/logo.${fileExt}`;
+        const fileExt = logoFile.name.split('.').pop()?.toLowerCase();
+        const fileName = `logo_${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('logos')
           .upload(filePath, logoFile, { upsert: true });
 
-        if (!uploadError) {
+        if (uploadError) {
+          console.error('Logo upload error:', uploadError);
+          setLogoError('Logo-Upload fehlgeschlagen. Bitte versuche es erneut.');
+        } else {
           const { data: { publicUrl } } = supabase.storage
             .from('logos')
             .getPublicUrl(filePath);
@@ -104,6 +146,7 @@ export default function SettingsPage() {
 
       if (error) throw error;
 
+      setLogoFile(null); // Reset file after successful upload
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
@@ -129,36 +172,36 @@ export default function SettingsPage() {
           <CardContent>
             {subscription?.plan === 'free' ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
                   <div>
-                    <p className="font-medium">Kostenloser Tarif</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-white">Kostenloser Tarif</p>
+                    <p className="text-sm text-gray-400">
                       {3 - (subscription.documents_count || 0)} von 3 Dokumenten übrig
                     </p>
                   </div>
-                  <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">
+                  <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm font-medium">
                     Free
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border rounded-lg p-4">
+                  <div className="border border-gray-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-lg">29 €</span>
-                      <span className="text-sm text-gray-500">einmalig</span>
+                      <span className="font-semibold text-lg text-white">29 €</span>
+                      <span className="text-sm text-gray-400">einmalig</span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-gray-400 mb-4">
                       Lebenslanger Zugang, unbegrenzte Dokumente
                     </p>
                     <UpgradeButton plan="lifetime">
                       Jetzt kaufen
                     </UpgradeButton>
                   </div>
-                  <div className="border rounded-lg p-4">
+                  <div className="border border-gray-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-lg">5 €</span>
-                      <span className="text-sm text-gray-500">/ Monat</span>
+                      <span className="font-semibold text-lg text-white">5 €</span>
+                      <span className="text-sm text-gray-400">/ Monat</span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-gray-400 mb-4">
                       Monatlich kündbar, unbegrenzte Dokumente
                     </p>
                     <UpgradeButton plan="monthly" variant="outline">
@@ -167,22 +210,93 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+            ) : subscription?.plan === 'lifetime' ? (
+              <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-800 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
+                  <CheckCircle className="h-6 w-6 text-green-500" />
                   <div>
-                    <p className="font-medium text-green-800">
-                      {subscription?.plan === 'lifetime' ? 'Lifetime-Zugang' : 'Monatliches Abo'}
-                    </p>
+                    <p className="font-medium text-green-400">Lifetime-Zugang</p>
                     <p className="text-sm text-green-600">
-                      Unbegrenzte Rechnungen & Angebote
+                      Unbegrenzte Rechnungen & Angebote - für immer
                     </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 bg-green-900 text-green-400 rounded-full text-sm font-medium">
                   Aktiv
                 </span>
+              </div>
+            ) : subscription?.cancel_at_period_end ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-yellow-900/30 border border-yellow-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <AlertCircle className="h-6 w-6 text-yellow-500" />
+                    <div>
+                      <p className="font-medium text-yellow-400">Abo gekündigt</p>
+                      <p className="text-sm text-yellow-600">
+                        Zugang bis {formatDate(subscription.current_period_end || null)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-yellow-900 text-yellow-400 rounded-full text-sm font-medium">
+                    Gekündigt
+                  </span>
+                </div>
+                <p className="text-sm text-gray-400">
+                  Du behältst den vollen Zugang bis zum Ende deiner Laufzeit.
+                </p>
+              </div>
+            ) : subscription?.status === 'expired' ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-red-900/30 border border-red-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <XCircle className="h-6 w-6 text-red-500" />
+                    <div>
+                      <p className="font-medium text-red-400">Abo abgelaufen</p>
+                      <p className="text-sm text-red-600">
+                        Bitte erneuere dein Abo für unbegrenzten Zugang
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-red-900 text-red-400 rounded-full text-sm font-medium">
+                    Abgelaufen
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <UpgradeButton plan="lifetime">
+                    Lifetime kaufen (29 €)
+                  </UpgradeButton>
+                  <UpgradeButton plan="monthly" variant="outline">
+                    Abo erneuern (5 €/Monat)
+                  </UpgradeButton>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-6 w-6 text-green-500" />
+                    <div>
+                      <p className="font-medium text-green-400">Monatliches Abo</p>
+                      <p className="text-sm text-green-600">
+                        Unbegrenzte Rechnungen & Angebote
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-green-900 text-green-400 rounded-full text-sm font-medium">
+                    Aktiv
+                  </span>
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancelSubscription}
+                    disabled={cancelLoading}
+                    className="text-gray-500 hover:text-red-400"
+                  >
+                    {cancelLoading ? 'Wird gekündigt...' : 'Abo kündigen'}
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
@@ -197,32 +311,38 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               {/* Logo Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Logo
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Logo (optional)
                 </label>
                 <div className="flex items-center gap-4">
                   {logoPreview ? (
                     <img
                       src={logoPreview}
                       alt="Logo"
-                      className="h-16 w-16 object-contain rounded border"
+                      className="h-16 w-auto max-w-[120px] object-contain rounded border border-gray-700 bg-white p-1"
                     />
                   ) : (
-                    <div className="h-16 w-16 bg-gray-100 rounded border flex items-center justify-center">
-                      <Upload className="h-6 w-6 text-gray-400" />
+                    <div className="h-16 w-16 bg-gray-800 rounded border border-gray-700 flex items-center justify-center">
+                      <Upload className="h-6 w-6 text-gray-500" />
                     </div>
                   )}
-                  <label className="cursor-pointer">
-                    <span className="text-sm text-blue-600 hover:underline">
-                      Logo hochladen
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleLogoChange}
-                    />
-                  </label>
+                  <div className="flex flex-col gap-1">
+                    <label className="cursor-pointer">
+                      <span className="text-sm text-blue-400 hover:text-blue-300 hover:underline">
+                        {logoPreview ? 'Logo ändern' : 'Logo hochladen'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                        className="hidden"
+                        onChange={handleLogoChange}
+                      />
+                    </label>
+                    <span className="text-xs text-gray-500">PNG, JPG oder GIF</span>
+                    {logoError && (
+                      <span className="text-xs text-red-400">{logoError}</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -303,7 +423,7 @@ export default function SettingsPage() {
 
               <Toggle
                 label="Kleinunternehmer (§19 UStG)"
-                description="Auf Rechnungen erscheint der Hinweis zur Kleinunternehmerregelung"
+                description={formData.is_kleinunternehmer ? "Auf Rechnungen erscheint der Hinweis zur Kleinunternehmerregelung" : undefined}
                 checked={formData.is_kleinunternehmer || false}
                 onChange={(checked) =>
                   setFormData({ ...formData, is_kleinunternehmer: checked })

@@ -39,21 +39,42 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
+  // Redirect to login if not authenticated
   if (isProtectedPath && !user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from auth pages
+  // Redirect to email confirmation page if email not confirmed
+  if (isProtectedPath && user && !user.email_confirmed_at) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/email-bestaetigen';
+    return NextResponse.redirect(url);
+  }
+
+  // Redirect logged-in users away from auth pages (except email confirmation page)
   const authPaths = ['/login', '/register'];
   const isAuthPath = authPaths.some(path =>
     request.nextUrl.pathname === path
   );
+  const isEmailConfirmPage = request.nextUrl.pathname === '/email-bestaetigen';
+
+  // If user is on email confirmation page but email is now confirmed, redirect to dashboard
+  if (isEmailConfirmPage && user?.email_confirmed_at) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
 
   if (isAuthPath && user) {
     const url = request.nextUrl.clone();
-    url.pathname = '/dashboard';
+    // If email not confirmed, go to confirmation page
+    if (!user.email_confirmed_at) {
+      url.pathname = '/email-bestaetigen';
+    } else {
+      url.pathname = '/dashboard';
+    }
     return NextResponse.redirect(url);
   }
 

@@ -9,16 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2 } from 'lucide-react';
-import { formatCurrency, generateDocumentNumber, calculateTotal } from '@/lib/utils';
-import type { Customer, LineItemFormData, DocumentType } from '@/types/database';
+import { formatCurrency, generateDocumentNumber, calculateTotal, calculateVat, calculateGrossTotal } from '@/lib/utils';
+import type { Customer, LineItemFormData, DocumentType, Profile } from '@/types/database';
 
 interface DocumentFormProps {
   type: DocumentType;
   customers: Customer[];
+  profile: Profile | null;
   documentCount: number;
 }
 
-export function DocumentForm({ type, customers, documentCount }: DocumentFormProps) {
+export function DocumentForm({ type, customers, profile, documentCount }: DocumentFormProps) {
   const router = useRouter();
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
@@ -32,7 +33,13 @@ export function DocumentForm({ type, customers, documentCount }: DocumentFormPro
     customer_id: '',
     date: today,
     due_date: dueDate,
+    location: profile?.city || '',
+    introduction_text: type === 'invoice'
+      ? 'gemäß den vereinbarten Vergütungskonditionen erlauben wir uns Ihnen für die erbrachten Leistungen den nachfolgenden Betrag in Rechnung zu stellen:'
+      : 'wir freuen uns, Ihnen folgendes Angebot unterbreiten zu können:',
     notes: type === 'invoice' ? 'Zahlbar innerhalb von 14 Tagen.' : 'Dieses Angebot ist 30 Tage gültig.',
+    vat_rate: 20,
+    sender_name: '',
   });
 
   const [lineItems, setLineItems] = useState<LineItemFormData[]>([
@@ -61,7 +68,11 @@ export function DocumentForm({ type, customers, documentCount }: DocumentFormPro
     setLineItems(updated);
   };
 
-  const total = calculateTotal(lineItems);
+  const netTotal = calculateTotal(lineItems);
+  const vatAmount = calculateVat(netTotal, formData.vat_rate);
+  const grossTotal = calculateGrossTotal(netTotal, formData.vat_rate);
+
+  const selectedCustomer = customers.find(c => c.id === formData.customer_id);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +95,10 @@ export function DocumentForm({ type, customers, documentCount }: DocumentFormPro
           date: formData.date,
           due_date: formData.due_date,
           notes: formData.notes,
+          vat_rate: formData.vat_rate,
+          location: formData.location || null,
+          introduction_text: formData.introduction_text || null,
+          sender_name: formData.sender_name || null,
           status: 'draft',
         })
         .select()
@@ -127,29 +142,72 @@ export function DocumentForm({ type, customers, documentCount }: DocumentFormPro
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Customer & Dates */}
+      {/* Absender & Empfänger */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            {type === 'invoice' ? 'Rechnungsdetails' : 'Angebotsdetails'}
-          </CardTitle>
+          <CardTitle>Absender & Empfänger</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Absender (readonly) */}
+          <div>
+            <p className="text-xs text-gray-500 uppercase mb-2">Absender</p>
+            <div className="bg-gray-800 p-4 rounded-lg text-gray-200 text-sm">
+              {profile ? (
+                <>
+                  <p className="font-medium text-white">{profile.company_name || 'Firma nicht hinterlegt'}</p>
+                  <p>{profile.address}</p>
+                  <p>{profile.zip} {profile.city}</p>
+                  {profile.tax_number && <p className="mt-1 text-gray-400">St.-Nr.: {profile.tax_number}</p>}
+                </>
+              ) : (
+                <p className="text-gray-400">Bitte hinterlegen Sie Ihre Firmendaten in den Einstellungen.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Empfänger */}
+          <div>
+            <Select
+              id="customer"
+              label="Empfänger"
+              options={customerOptions}
+              value={formData.customer_id}
+              onChange={(e) =>
+                setFormData({ ...formData, customer_id: e.target.value })
+              }
+            />
+            {selectedCustomer && (
+              <div className="mt-2 bg-gray-800 p-4 rounded-lg text-gray-200 text-sm">
+                <p className="font-medium text-white">{selectedCustomer.name}</p>
+                {selectedCustomer.company && <p>{selectedCustomer.company}</p>}
+                <p>{selectedCustomer.address}</p>
+                <p>{selectedCustomer.zip} {selectedCustomer.city}</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Ort & Datum */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ort & Datum</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Select
-            id="customer"
-            label="Kunde"
-            options={customerOptions}
-            value={formData.customer_id}
-            onChange={(e) =>
-              setFormData({ ...formData, customer_id: e.target.value })
-            }
-          />
-
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
+            <Input
+              id="location"
+              label="Ort"
+              placeholder="z.B. Berlin"
+              value={formData.location}
+              onChange={(e) =>
+                setFormData({ ...formData, location: e.target.value })
+              }
+            />
             <Input
               id="date"
               type="date"
-              label="Datum"
+              label={type === 'invoice' ? 'Rechnungsdatum' : 'Angebotsdatum'}
               value={formData.date}
               onChange={(e) =>
                 setFormData({ ...formData, date: e.target.value })
@@ -168,7 +226,30 @@ export function DocumentForm({ type, customers, documentCount }: DocumentFormPro
         </CardContent>
       </Card>
 
-      {/* Line Items */}
+      {/* Einleitungstext */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Anrede & Einleitung</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="text-gray-300 text-sm">
+            <p className="mb-2">
+              Sehr geehrte{selectedCustomer ? ` Damen und Herren` : ' Damen und Herren'},
+            </p>
+          </div>
+          <Textarea
+            id="introduction_text"
+            rows={3}
+            label="Einleitungstext"
+            value={formData.introduction_text}
+            onChange={(e) =>
+              setFormData({ ...formData, introduction_text: e.target.value })
+            }
+          />
+        </CardContent>
+      </Card>
+
+      {/* Positionen */}
       <Card>
         <CardHeader>
           <CardTitle>Positionen</CardTitle>
@@ -176,7 +257,7 @@ export function DocumentForm({ type, customers, documentCount }: DocumentFormPro
         <CardContent>
           <div className="space-y-4">
             {/* Header */}
-            <div className="hidden md:grid grid-cols-12 gap-2 text-sm font-medium text-gray-500">
+            <div className="hidden md:grid grid-cols-12 gap-2 text-sm font-medium text-gray-400">
               <div className="col-span-5">Beschreibung</div>
               <div className="col-span-2">Menge</div>
               <div className="col-span-2">Einheit</div>
@@ -189,7 +270,7 @@ export function DocumentForm({ type, customers, documentCount }: DocumentFormPro
               <div key={index} className="grid grid-cols-12 gap-2 items-start">
                 <div className="col-span-12 md:col-span-5">
                   <Input
-                    placeholder="z.B. Webdesign, Beratung, etc."
+                    placeholder="z.B. Beratungsleistung, Courtage, etc."
                     value={item.description}
                     onChange={(e) =>
                       updateLineItem(index, 'description', e.target.value)
@@ -243,35 +324,84 @@ export function DocumentForm({ type, customers, documentCount }: DocumentFormPro
               <Plus className="h-4 w-4 mr-1" />
               Position hinzufügen
             </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Total */}
-            <div className="flex justify-end pt-4 border-t">
-              <div className="text-right">
-                <p className="text-sm text-gray-500">Gesamtbetrag</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(total)}
-                </p>
+      {/* Umsatzsteuer & Summen */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Umsatzsteuer & Summen</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* USt. frei eingebbar */}
+          <div className="max-w-xs">
+            <Input
+              id="vat_rate"
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              label="Umsatzsteuer (%)"
+              value={formData.vat_rate}
+              onChange={(e) =>
+                setFormData({ ...formData, vat_rate: parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+
+          {/* Summen */}
+          <div className="flex justify-end pt-4 border-t border-gray-700">
+            <div className="text-right space-y-2 min-w-[250px]">
+              <div className="flex justify-between gap-8">
+                <p className="text-sm text-gray-400">Nettobetrag</p>
+                <p className="text-sm text-white">{formatCurrency(netTotal)}</p>
+              </div>
+              {formData.vat_rate > 0 && (
+                <div className="flex justify-between gap-8">
+                  <p className="text-sm text-gray-400">{formData.vat_rate}% USt.</p>
+                  <p className="text-sm text-white">{formatCurrency(vatAmount)}</p>
+                </div>
+              )}
+              <div className="flex justify-between gap-8 pt-2 border-t border-gray-600">
+                <p className="text-sm font-medium text-gray-200">Gesamtbetrag</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(grossTotal)}</p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Notes */}
+      {/* Schlusstext & Anmerkungen */}
       <Card>
         <CardHeader>
-          <CardTitle>Anmerkungen</CardTitle>
+          <CardTitle>Schlusstext & Absender</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <Textarea
             id="notes"
-            rows={3}
-            placeholder="Optionale Anmerkungen..."
+            rows={2}
+            label="Zahlungsbedingungen / Anmerkungen"
+            placeholder="z.B. Zahlbar innerhalb von 14 Tagen..."
             value={formData.notes}
             onChange={(e) =>
               setFormData({ ...formData, notes: e.target.value })
             }
           />
+          <Input
+            id="sender_name"
+            label="Name des Absenders (Unterschrift)"
+            placeholder="z.B. Max Mustermann"
+            value={formData.sender_name}
+            onChange={(e) =>
+              setFormData({ ...formData, sender_name: e.target.value })
+            }
+          />
+          <div className="text-gray-400 text-sm italic">
+            <p>Wir bedanken uns für die Zusammenarbeit.</p>
+            <p className="mt-2">mit freundlichen Grüßen</p>
+            {formData.sender_name && <p className="mt-1 text-white">{formData.sender_name}</p>}
+          </div>
         </CardContent>
       </Card>
 

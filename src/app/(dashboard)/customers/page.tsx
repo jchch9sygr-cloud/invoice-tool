@@ -34,11 +34,11 @@ export default async function CustomersPage() {
           <Card>
             <CardContent className="py-12">
               <div className="text-center">
-                <Users className="mx-auto h-12 w-12 text-gray-300" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <Users className="mx-auto h-12 w-12 text-gray-600" />
+                <h3 className="mt-4 text-lg font-medium text-white">
                   Noch keine Kunden
                 </h3>
-                <p className="mt-2 text-gray-500">
+                <p className="mt-2 text-gray-400">
                   Lege deinen ersten Kunden an, um Rechnungen zu erstellen.
                 </p>
                 <Link href="/customers/new">

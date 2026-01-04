@@ -65,9 +65,9 @@ export default function RegisterPage() {
         return;
       }
 
-      // If user needs to confirm email
+      // If user needs to confirm email (no session = email confirmation required)
       if (data?.user && !data?.session) {
-        setSuccess('Registrierung erfolgreich! Bitte bestätige deine E-Mail-Adresse.');
+        setSuccess('email_confirmation_required');
         return;
       }
 
@@ -94,9 +94,15 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {success && (
-            <div className="rounded-lg bg-green-900/50 border border-green-800 p-3 text-sm text-green-400">
-              {success}
+          {success === 'email_confirmation_required' && (
+            <div className="rounded-lg bg-blue-900/50 border border-blue-800 p-4 text-sm text-blue-300">
+              <p className="font-semibold mb-2 text-blue-200">Fast geschafft!</p>
+              <p>Wir haben eine Bestätigungs-E-Mail an <span className="font-medium text-blue-100">{email}</span> gesendet.</p>
+              <p className="mt-2">Bitte klicke auf den Link in der E-Mail, um dein Konto zu aktivieren.</p>
+              <p className="mt-3 text-blue-400 text-xs">Keine E-Mail erhalten? Prüfe deinen Spam-Ordner.</p>
+              <Link href="/login" className="inline-block mt-3 text-blue-400 hover:text-blue-300 underline">
+                Zur Anmeldung
+              </Link>
             </div>
           )}
 

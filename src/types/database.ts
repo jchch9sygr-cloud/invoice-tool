@@ -48,6 +48,10 @@ export interface Document {
   due_date: string | null;
   status: DocumentStatus;
   notes: string | null;
+  vat_rate: number;
+  location: string | null;
+  introduction_text: string | null;
+  sender_name: string | null;
   created_at: string;
   customer?: Customer;
   line_items?: LineItem[];
@@ -70,6 +74,8 @@ export interface Subscription {
   stripe_subscription_id: string | null;
   plan: 'lifetime' | 'monthly' | 'free';
   status: 'active' | 'cancelled' | 'expired';
+  cancel_at_period_end: boolean;
+  current_period_end: string | null;
   documents_count: number;
   created_at: string;
 }
@@ -111,5 +117,6 @@ export interface DocumentFormData {
   date: string;
   due_date: string;
   notes: string;
+  vat_rate: number;
   line_items: LineItemFormData[];
 }

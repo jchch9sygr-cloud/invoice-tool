@@ -36,6 +36,14 @@ export function calculateTotal(
   return items.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
 }
 
+export function calculateVat(netTotal: number, vatRate: number): number {
+  return netTotal * (vatRate / 100);
+}
+
+export function calculateGrossTotal(netTotal: number, vatRate: number): number {
+  return netTotal + calculateVat(netTotal, vatRate);
+}
+
 export function getKleinunternehmerText(): string {
   return 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.';
 }

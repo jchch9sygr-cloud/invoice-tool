@@ -35,11 +35,11 @@ export default async function InvoicesPage() {
           <Card>
             <CardContent className="py-12">
               <div className="text-center">
-                <FileText className="mx-auto h-12 w-12 text-gray-300" />
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <FileText className="mx-auto h-12 w-12 text-gray-600" />
+                <h3 className="mt-4 text-lg font-medium text-white">
                   Noch keine Rechnungen
                 </h3>
-                <p className="mt-2 text-gray-500">
+                <p className="mt-2 text-gray-400">
                   Erstelle deine erste Rechnung in unter 2 Minuten.
                 </p>
                 <Link href="/invoices/new">

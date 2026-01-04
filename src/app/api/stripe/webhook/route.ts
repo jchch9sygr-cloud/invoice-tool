@@ -51,9 +51,34 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      case 'customer.subscription.updated':
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object;
+        const customerId = subscription.customer as string;
+        const currentPeriodEnd = (subscription as unknown as { current_period_end: number }).current_period_end;
+        const cancelAtPeriodEnd = (subscription as unknown as { cancel_at_period_end: boolean }).cancel_at_period_end;
+        const status = (subscription as unknown as { status: string }).status;
+
+        const { data: sub } = await supabase
+          .from('subscriptions')
+          .select('user_id')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (sub) {
+          await supabase
+            .from('subscriptions')
+            .update({
+              status: status === 'active' ? 'active' : 'cancelled',
+              cancel_at_period_end: cancelAtPeriodEnd,
+              current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+            })
+            .eq('user_id', sub.user_id);
+        }
+        break;
+      }
+
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object;
         const customerId = subscription.customer as string;
 
         const { data: sub } = await supabase
@@ -63,11 +88,16 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (sub) {
-          const status =
-            subscription.status === 'active' ? 'active' : 'cancelled';
+          // Subscription ended - set to expired, reset to free
           await supabase
             .from('subscriptions')
-            .update({ status })
+            .update({
+              status: 'expired',
+              plan: 'free',
+              stripe_subscription_id: null,
+              cancel_at_period_end: false,
+              current_period_end: null,
+            })
             .eq('user_id', sub.user_id);
         }
         break;

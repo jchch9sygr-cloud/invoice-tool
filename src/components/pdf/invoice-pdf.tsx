@@ -7,160 +7,208 @@ import {
   View,
   StyleSheet,
   Image,
-  Font,
 } from '@react-pdf/renderer';
-import { formatCurrency, formatDate, getKleinunternehmerText, calculateTotal } from '@/lib/utils';
+import { formatCurrency, formatDate, getKleinunternehmerText, calculateTotal, calculateVat, calculateGrossTotal } from '@/lib/utils';
 import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@/types/database';
-
-// Register font (optional - uses default if not available)
-Font.register({
-  family: 'Inter',
-  fonts: [
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hjp-Ek-_EeA.woff2', fontWeight: 400 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fAZ9hjp-Ek-_EeA.woff2', fontWeight: 600 },
-    { src: 'https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYAZ9hjp-Ek-_EeA.woff2', fontWeight: 700 },
-  ],
-});
 
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    fontSize: 10,
-    fontFamily: 'Inter',
+    paddingBottom: 80,
+    fontSize: 9,
+    fontFamily: 'Helvetica',
     color: '#1f2937',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 40,
+    marginBottom: 15,
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 60,
+    height: 60,
     objectFit: 'contain',
   },
   companyInfo: {
     textAlign: 'right',
+    fontSize: 8,
   },
   companyName: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 700,
-    marginBottom: 4,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 700,
-    marginBottom: 20,
-  },
-  metaSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 30,
-  },
-  customerBox: {
-    width: '50%',
-  },
-  detailsBox: {
-    width: '40%',
-  },
-  label: {
-    fontSize: 8,
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 10,
     marginBottom: 2,
   },
+  senderLine: {
+    fontSize: 7,
+    color: '#6b7280',
+    marginBottom: 6,
+    paddingBottom: 3,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#d1d5db',
+  },
+  recipientSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  recipientBox: {
+    width: '55%',
+  },
+  dateBox: {
+    width: '40%',
+    textAlign: 'right',
+  },
+  title: {
+    fontSize: 12,
+    fontWeight: 700,
+    marginBottom: 10,
+  },
+  introSection: {
+    marginBottom: 12,
+  },
+  introText: {
+    fontSize: 9,
+    lineHeight: 1.4,
+    marginBottom: 3,
+  },
+  text: {
+    fontSize: 9,
+    marginBottom: 1,
+  },
+  textBold: {
+    fontSize: 9,
+    fontWeight: 700,
+    marginBottom: 1,
+  },
+  textSmall: {
+    fontSize: 8,
+    marginBottom: 1,
+  },
   table: {
-    marginTop: 20,
+    marginTop: 8,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#f3f4f6',
-    padding: 8,
+    padding: 6,
+    fontSize: 8,
     fontWeight: 600,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 8,
-    borderBottomWidth: 1,
+    padding: 6,
+    borderBottomWidth: 0.5,
     borderBottomColor: '#e5e7eb',
+    fontSize: 9,
   },
   colDescription: {
     width: '45%',
   },
   colQuantity: {
-    width: '15%',
-    textAlign: 'right',
-  },
-  colUnit: {
-    width: '15%',
-    textAlign: 'center',
-  },
-  colPrice: {
     width: '12%',
     textAlign: 'right',
   },
-  colTotal: {
+  colUnit: {
     width: '13%',
+    textAlign: 'center',
+  },
+  colPrice: {
+    width: '15%',
+    textAlign: 'right',
+  },
+  colTotal: {
+    width: '15%',
     textAlign: 'right',
   },
   totalSection: {
-    marginTop: 20,
+    marginTop: 12,
     alignItems: 'flex-end',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: 200,
-    padding: 8,
+    width: 180,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    fontSize: 9,
+  },
+  totalRowBorder: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 180,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#1f2937',
+    marginTop: 2,
   },
   totalLabel: {
-    fontWeight: 600,
+    fontSize: 9,
+  },
+  totalLabelBold: {
+    fontWeight: 700,
+    fontSize: 10,
   },
   totalValue: {
+    fontSize: 9,
+  },
+  totalValueBold: {
     fontWeight: 700,
-    fontSize: 14,
+    fontSize: 10,
   },
-  notes: {
-    marginTop: 30,
-    padding: 12,
-    backgroundColor: '#f9fafb',
-    borderRadius: 4,
-  },
-  notesLabel: {
-    fontSize: 8,
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    marginBottom: 4,
+  paymentInfo: {
+    marginTop: 12,
+    fontSize: 9,
   },
   kleinunternehmer: {
-    marginTop: 20,
-    fontSize: 9,
+    marginTop: 10,
+    fontSize: 8,
     color: '#6b7280',
     fontStyle: 'italic',
   },
+  closingSection: {
+    marginTop: 20,
+  },
+  closingText: {
+    fontSize: 9,
+    marginBottom: 3,
+  },
+  signature: {
+    marginTop: 12,
+    fontSize: 9,
+  },
+  signatureName: {
+    marginTop: 3,
+    fontSize: 9,
+    fontWeight: 700,
+  },
   footer: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 25,
     left: 40,
     right: 40,
   },
   footerDivider: {
-    borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
-    paddingTop: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: '#d1d5db',
+    paddingTop: 8,
   },
   footerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    fontSize: 8,
+    fontSize: 7,
     color: '#6b7280',
   },
-  bankInfo: {
+  footerSection: {
+    maxWidth: '30%',
+  },
+  footerBank: {
     textAlign: 'right',
+    maxWidth: '35%',
+  },
+  footerLabel: {
+    fontWeight: 700,
+    marginBottom: 1,
   },
 });
 
@@ -172,14 +220,16 @@ interface InvoicePDFProps {
 }
 
 export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePDFProps) {
-  const total = calculateTotal(lineItems);
+  const netTotal = calculateTotal(lineItems);
+  const vatRate = document.vat_rate || 0;
+  const vatAmount = calculateVat(netTotal, vatRate);
+  const grossTotal = calculateGrossTotal(netTotal, vatRate);
   const isInvoice = document.type === 'invoice';
-  const title = isInvoice ? 'RECHNUNG' : 'ANGEBOT';
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* Header mit Logo und Absender */}
         <View style={styles.header}>
           <View>
             {profile.logo_url && (
@@ -188,53 +238,60 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           </View>
           <View style={styles.companyInfo}>
             <Text style={styles.companyName}>{profile.company_name}</Text>
-            <Text style={styles.value}>{profile.address}</Text>
-            <Text style={styles.value}>{profile.zip} {profile.city}</Text>
-            {profile.phone && <Text style={styles.value}>Tel: {profile.phone}</Text>}
-            {profile.email && <Text style={styles.value}>{profile.email}</Text>}
-            {profile.tax_number && <Text style={styles.value}>St.-Nr.: {profile.tax_number}</Text>}
+            <Text style={styles.textSmall}>{profile.address}</Text>
+            <Text style={styles.textSmall}>{profile.zip} {profile.city}</Text>
+            {profile.phone && <Text style={styles.textSmall}>Tel: {profile.phone}</Text>}
+            {profile.email && <Text style={styles.textSmall}>{profile.email}</Text>}
+            {profile.tax_number && <Text style={styles.textSmall}>St.-Nr.: {profile.tax_number}</Text>}
           </View>
         </View>
 
-        {/* Title */}
-        <Text style={styles.title}>{title} {document.number}</Text>
+        {/* Absenderzeile klein */}
+        <Text style={styles.senderLine}>
+          {profile.company_name} · {profile.address} · {profile.zip} {profile.city}
+        </Text>
 
-        {/* Meta Section */}
-        <View style={styles.metaSection}>
-          <View style={styles.customerBox}>
-            <Text style={styles.label}>Kunde</Text>
+        {/* Empfänger und Datum */}
+        <View style={styles.recipientSection}>
+          <View style={styles.recipientBox}>
             {customer ? (
               <>
-                <Text style={styles.value}>{customer.name}</Text>
-                {customer.company && <Text style={styles.value}>{customer.company}</Text>}
-                {customer.address && <Text style={styles.value}>{customer.address}</Text>}
-                <Text style={styles.value}>{customer.zip} {customer.city}</Text>
+                <Text style={styles.textBold}>{customer.name}</Text>
+                {customer.company && <Text style={styles.text}>{customer.company}</Text>}
+                {customer.address && <Text style={styles.text}>{customer.address}</Text>}
+                <Text style={styles.text}>{customer.zip} {customer.city}</Text>
               </>
             ) : (
-              <Text style={styles.value}>-</Text>
+              <Text style={styles.text}>-</Text>
             )}
           </View>
-          <View style={styles.detailsBox}>
-            <View style={{ marginBottom: 8 }}>
-              <Text style={styles.label}>{isInvoice ? 'Rechnungsdatum' : 'Angebotsdatum'}</Text>
-              <Text style={styles.value}>{formatDate(document.date)}</Text>
-            </View>
-            {document.due_date && (
-              <View>
-                <Text style={styles.label}>{isInvoice ? 'Fällig am' : 'Gültig bis'}</Text>
-                <Text style={styles.value}>{formatDate(document.due_date)}</Text>
-              </View>
-            )}
+          <View style={styles.dateBox}>
+            <Text style={styles.text}>
+              {document.location && `${document.location}, `}{formatDate(document.date)}
+            </Text>
           </View>
         </View>
 
-        {/* Table */}
+        {/* Betreff / Titel */}
+        <Text style={styles.title}>
+          {isInvoice ? 'Rechnung' : 'Angebot'} Nr. {document.number}
+        </Text>
+
+        {/* Anrede und Einleitungstext */}
+        <View style={styles.introSection}>
+          <Text style={styles.introText}>Sehr geehrte Damen und Herren,</Text>
+          {document.introduction_text && (
+            <Text style={styles.introText}>{document.introduction_text}</Text>
+          )}
+        </View>
+
+        {/* Positionen-Tabelle */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={styles.colDescription}>Beschreibung</Text>
             <Text style={styles.colQuantity}>Menge</Text>
             <Text style={styles.colUnit}>Einheit</Text>
-            <Text style={styles.colPrice}>Preis</Text>
+            <Text style={styles.colPrice}>Einzelpreis</Text>
             <Text style={styles.colTotal}>Gesamt</Text>
           </View>
           {lineItems.map((item, index) => (
@@ -250,38 +307,66 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           ))}
         </View>
 
-        {/* Total */}
+        {/* Summen: Netto, USt., Brutto */}
         <View style={styles.totalSection}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Gesamtbetrag:</Text>
-            <Text style={styles.totalValue}>{formatCurrency(total)}</Text>
+            <Text style={styles.totalLabel}>Nettobetrag:</Text>
+            <Text style={styles.totalValue}>{formatCurrency(netTotal)}</Text>
+          </View>
+          {vatRate > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>{vatRate}% USt.:</Text>
+              <Text style={styles.totalValue}>{formatCurrency(vatAmount)}</Text>
+            </View>
+          )}
+          <View style={styles.totalRowBorder}>
+            <Text style={styles.totalLabelBold}>Gesamtbetrag:</Text>
+            <Text style={styles.totalValueBold}>{formatCurrency(grossTotal)}</Text>
           </View>
         </View>
+
+        {/* Zahlungshinweis / Anmerkungen */}
+        {document.notes && (
+          <Text style={styles.paymentInfo}>{document.notes}</Text>
+        )}
 
         {/* Kleinunternehmer Hinweis */}
         {profile.is_kleinunternehmer && (
           <Text style={styles.kleinunternehmer}>{getKleinunternehmerText()}</Text>
         )}
 
-        {/* Notes */}
-        {document.notes && (
-          <View style={styles.notes}>
-            <Text style={styles.notesLabel}>Anmerkungen</Text>
-            <Text style={styles.value}>{document.notes}</Text>
-          </View>
-        )}
+        {/* Danksagung und Grußformel */}
+        <View style={styles.closingSection}>
+          <Text style={styles.closingText}>
+            {isInvoice
+              ? 'Wir bedanken uns für die Zusammenarbeit.'
+              : 'Wir freuen uns auf Ihre Rückmeldung.'}
+          </Text>
+          <Text style={styles.signature}>mit freundlichen Grüßen</Text>
+          {document.sender_name ? (
+            <Text style={styles.signatureName}>{document.sender_name}</Text>
+          ) : (
+            <Text style={styles.signatureName}>{profile.company_name}</Text>
+          )}
+        </View>
 
-        {/* Footer */}
+        {/* Footer mit Bankverbindung */}
         <View style={styles.footer}>
           <View style={styles.footerDivider}>
             <View style={styles.footerContent}>
-              <View>
-                <Text>{profile.company_name}</Text>
-                <Text>{profile.address}, {profile.zip} {profile.city}</Text>
+              <View style={styles.footerSection}>
+                <Text style={styles.footerLabel}>{profile.company_name}</Text>
+                <Text>{profile.address}</Text>
+                <Text>{profile.zip} {profile.city}</Text>
+              </View>
+              <View style={styles.footerSection}>
+                {profile.phone && <Text>Tel: {profile.phone}</Text>}
+                {profile.email && <Text>{profile.email}</Text>}
+                {profile.tax_number && <Text>St.-Nr.: {profile.tax_number}</Text>}
               </View>
               {(profile.bank_name || profile.iban) && (
-                <View style={styles.bankInfo}>
-                  <Text>Bankverbindung</Text>
+                <View style={styles.footerBank}>
+                  <Text style={styles.footerLabel}>Bankverbindung</Text>
                   {profile.bank_name && <Text>{profile.bank_name}</Text>}
                   {profile.iban && <Text>IBAN: {profile.iban}</Text>}
                   {profile.bic && <Text>BIC: {profile.bic}</Text>}

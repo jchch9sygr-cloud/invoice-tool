@@ -33,10 +33,10 @@ export function DocumentList({ documents, type }: DocumentListProps) {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      draft: 'bg-gray-100 text-gray-700',
-      sent: 'bg-blue-100 text-blue-700',
-      paid: 'bg-green-100 text-green-700',
-      cancelled: 'bg-red-100 text-red-700',
+      draft: 'bg-gray-700 text-gray-300',
+      sent: 'bg-blue-900/50 text-blue-400',
+      paid: 'bg-green-900/50 text-green-400',
+      cancelled: 'bg-red-900/50 text-red-400',
     };
     const labels = {
       draft: 'Entwurf',
@@ -61,28 +61,30 @@ export function DocumentList({ documents, type }: DocumentListProps) {
         const total = calculateTotal(doc.line_items || []);
 
         return (
-          <Card key={doc.id} className="hover:border-gray-300 transition-colors">
+          <Card key={doc.id} className="hover:border-blue-600 transition-colors">
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   {type === 'invoice' ? (
-                    <FileText className="h-8 w-8 text-gray-300" />
+                    <FileText className="h-8 w-8 text-blue-500" />
                   ) : (
-                    <FileCheck className="h-8 w-8 text-gray-300" />
+                    <FileCheck className="h-8 w-8 text-green-500" />
                   )}
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-gray-900">{doc.number}</h3>
+                      <h3 className="font-medium text-white">{doc.number}</h3>
                       {getStatusBadge(doc.status)}
                     </div>
-                    <p className="text-sm text-gray-500">
-                      {doc.customer?.name || 'Kein Kunde'} · {formatDate(doc.date)}
+                    <p className="text-sm text-gray-400">
+                      <span className="text-gray-300">{doc.customer?.name || 'Kein Kunde'}</span>
+                      <span className="mx-2">·</span>
+                      <span>{formatDate(doc.date)}</span>
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <p className="text-lg font-semibold text-gray-900">
+                  <p className="text-lg font-semibold text-white">
                     {formatCurrency(total)}
                   </p>
                   <div className="flex items-center gap-1">

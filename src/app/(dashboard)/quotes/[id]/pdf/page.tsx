@@ -70,12 +70,23 @@ export default function QuotePDFPage() {
     }
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!pdfUrl) return;
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = `${documentNumber}.pdf`;
-    link.click();
+
+    try {
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = `${documentNumber}.pdf`;
+      window.document.body.appendChild(link);
+      link.click();
+      window.document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+    }
   };
 
   return (
