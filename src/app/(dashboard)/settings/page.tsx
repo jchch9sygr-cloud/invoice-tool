@@ -337,7 +337,7 @@ export default function SettingsPage() {
                     <div>
                       <p className="font-medium text-yellow-400">Abo gekündigt</p>
                       <p className="text-sm text-yellow-600">
-                        Zugang bis {formatDate(subscription.current_period_end || null)}
+                        Zugang bis {subscription.current_period_end ? formatDate(subscription.current_period_end) : 'Ende der Laufzeit'}
                       </p>
                     </div>
                   </div>
