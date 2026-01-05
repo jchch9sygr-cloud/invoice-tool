@@ -114,7 +114,8 @@ export default async function InvoiceDetailPage({
                   <img
                     src={effectiveProfile.logo_url}
                     alt="Logo"
-                    className="h-14 w-auto object-contain"
+                    style={{ height: effectiveProfile.logo_size || 60 }}
+                    className="w-auto object-contain"
                   />
                 )}
               </div>
@@ -230,7 +231,15 @@ export default async function InvoiceDetailPage({
             {/* Grußformel */}
             <div className="mt-6 text-sm">
               <p className="mb-4">Wir bedanken uns für die Zusammenarbeit.</p>
-              <p className="mb-8">Mit freundlichen Grüßen</p>
+              <p className="mb-2">Mit freundlichen Grüßen</p>
+              {effectiveProfile?.signature_url && (
+                <img
+                  src={effectiveProfile.signature_url}
+                  alt="Unterschrift"
+                  style={{ height: effectiveProfile.signature_size || 50 }}
+                  className="w-auto object-contain mb-1"
+                />
+              )}
               <p className="font-semibold">
                 {document.sender_name || effectiveProfile?.company_name}
               </p>

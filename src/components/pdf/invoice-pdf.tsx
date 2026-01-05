@@ -174,6 +174,7 @@ const styles = StyleSheet.create({
   // Grußformel (DIN 5008: 1 Leerzeile vor Gruß)
   closingSection: {
     marginTop: 8.46 * 2.835,     // 2 Leerzeilen
+    alignItems: 'flex-start',    // Links ausrichten
   },
   closingText: {
     fontSize: 10,

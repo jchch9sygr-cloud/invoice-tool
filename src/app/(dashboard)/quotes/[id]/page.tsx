@@ -87,7 +87,8 @@ export default async function QuoteDetailPage({
                   <img
                     src={profile.logo_url}
                     alt="Logo"
-                    className="h-14 w-auto object-contain"
+                    style={{ height: profile.logo_size || 60 }}
+                    className="w-auto object-contain"
                   />
                 )}
               </div>
@@ -203,7 +204,15 @@ export default async function QuoteDetailPage({
             {/* Grußformel */}
             <div className="mt-6 text-sm">
               <p className="mb-4">Wir freuen uns auf Ihre Rückmeldung.</p>
-              <p className="mb-8">Mit freundlichen Grüßen</p>
+              <p className="mb-2">Mit freundlichen Grüßen</p>
+              {profile?.signature_url && (
+                <img
+                  src={profile.signature_url}
+                  alt="Unterschrift"
+                  style={{ height: profile.signature_size || 50 }}
+                  className="w-auto object-contain mb-1"
+                />
+              )}
               <p className="font-semibold">
                 {document.sender_name || profile?.company_name}
               </p>
