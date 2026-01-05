@@ -42,15 +42,19 @@ export async function POST() {
     );
 
     // Get current period end from the subscription response
-    const currentPeriodEnd = (stripeSubscription as unknown as { current_period_end: number }).current_period_end;
-    const periodEnd = new Date(currentPeriodEnd * 1000).toISOString();
+    let periodEnd: string | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const subData = stripeSubscription as any;
+    if (subData.current_period_end) {
+      periodEnd = new Date(subData.current_period_end * 1000).toISOString();
+    }
 
     // Update database
     await supabase
       .from('subscriptions')
       .update({
         cancel_at_period_end: true,
-        current_period_end: periodEnd,
+        ...(periodEnd && { current_period_end: periodEnd }),
       })
       .eq('user_id', user.id);
 
