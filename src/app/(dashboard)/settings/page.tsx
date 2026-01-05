@@ -154,11 +154,14 @@ export default function SettingsPage() {
           cancel_at_period_end: true,
           current_period_end: data.period_end,
         } : null);
+        alert('Dein Abo wurde gekündigt. Du behältst den Zugang bis zum Ende der Laufzeit.');
       } else {
-        alert('Fehler beim Kündigen: ' + data.error);
+        console.error('Cancel error:', data);
+        alert('Fehler beim Kündigen: ' + data.error + (data.debug ? '\n\nDebug: ' + JSON.stringify(data.debug) : ''));
       }
-    } catch {
-      alert('Ein Fehler ist aufgetreten.');
+    } catch (err) {
+      console.error('Cancel exception:', err);
+      alert('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
     } finally {
       setCancelLoading(false);
     }

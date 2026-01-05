@@ -38,13 +38,20 @@ export async function POST(request: NextRequest) {
         const plan = session.metadata?.plan;
 
         if (userId && plan) {
+          // subscription kann ein String oder ein Objekt sein
+          let subscriptionId: string | null = null;
+          if (session.mode === 'subscription' && session.subscription) {
+            subscriptionId = typeof session.subscription === 'string'
+              ? session.subscription
+              : session.subscription.id;
+          }
+
           await supabase
             .from('subscriptions')
             .update({
               plan: plan,
               status: 'active',
-              stripe_subscription_id:
-                session.mode === 'subscription' ? session.subscription : null,
+              stripe_subscription_id: subscriptionId,
             })
             .eq('user_id', userId);
         }

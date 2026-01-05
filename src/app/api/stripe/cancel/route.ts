@@ -4,7 +4,7 @@ import { stripe } from '@/lib/stripe';
 
 export async function POST() {
   if (!stripe) {
-    return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+    return NextResponse.json({ error: 'Stripe nicht konfiguriert' }, { status: 500 });
   }
 
   try {
@@ -12,18 +12,27 @@ export async function POST() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
     }
 
     // Get subscription from database
-    const { data: subscription } = await supabase
+    const { data: subscription, error: fetchError } = await supabase
       .from('subscriptions')
-      .select('stripe_subscription_id')
+      .select('stripe_subscription_id, stripe_customer_id, plan')
       .eq('user_id', user.id)
       .single();
 
+    if (fetchError) {
+      console.error('Fehler beim Laden der Subscription:', fetchError);
+      return NextResponse.json({ error: 'Abo nicht gefunden' }, { status: 400 });
+    }
+
     if (!subscription?.stripe_subscription_id) {
-      return NextResponse.json({ error: 'No active subscription' }, { status: 400 });
+      console.error('Keine stripe_subscription_id gefunden:', subscription);
+      return NextResponse.json({
+        error: 'Keine Stripe Subscription ID vorhanden. Bitte kontaktiere den Support.',
+        debug: { plan: subscription?.plan, hasCustomerId: !!subscription?.stripe_customer_id }
+      }, { status: 400 });
     }
 
     // Cancel at period end (user keeps access until subscription ends)
@@ -51,8 +60,9 @@ export async function POST() {
     });
   } catch (error) {
     console.error('Cancel subscription error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
     return NextResponse.json(
-      { error: 'Failed to cancel subscription' },
+      { error: `Fehler beim Kündigen: ${errorMessage}` },
       { status: 500 }
     );
   }
