@@ -31,9 +31,11 @@ const styles = StyleSheet.create({
     marginBottom: 10 * 2.835,    // 10mm Abstand
   },
   logo: {
-    width: 50,
-    height: 50,
     objectFit: 'contain',
+  },
+  signature: {
+    objectFit: 'contain',
+    marginBottom: 2 * 2.835,
   },
   companyInfo: {
     textAlign: 'right',
@@ -179,7 +181,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 10,
-    marginBottom: 12 * 2.835,    // 3 Leerzeilen für Unterschrift
+    marginBottom: 3 * 2.835,     // Weniger Abstand wenn Unterschrift folgt
   },
   signatureName: {
     fontSize: 10,
@@ -249,7 +251,10 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
         <View style={styles.header}>
           <View>
             {profile.logo_url && (
-              <Image src={profile.logo_url} style={styles.logo} />
+              <Image
+                src={profile.logo_url}
+                style={[styles.logo, { height: profile.logo_size || 60 }]}
+              />
             )}
           </View>
           <View style={styles.companyInfo}>
@@ -363,6 +368,12 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
               : 'Wir freuen uns auf Ihre Rückmeldung.'}
           </Text>
           <Text style={styles.greeting}>Mit freundlichen Grüßen</Text>
+          {profile.signature_url && (
+            <Image
+              src={profile.signature_url}
+              style={[styles.signature, { height: profile.signature_size || 50 }]}
+            />
+          )}
           <Text style={styles.signatureName}>
             {document.sender_name || profile.company_name}
           </Text>
