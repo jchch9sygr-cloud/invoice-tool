@@ -32,7 +32,7 @@ export const loginSchema = z.object({
 
 // Stripe Checkout
 export const checkoutSchema = z.object({
-  plan: z.enum(['lifetime', 'monthly'], {
+  plan: z.enum(['yearly', 'monthly'], {
     message: 'Ungültiger Plan',
   }),
 });

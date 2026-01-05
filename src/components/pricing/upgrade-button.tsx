@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
 interface UpgradeButtonProps {
-  plan: 'lifetime' | 'monthly';
+  plan: 'yearly' | 'monthly';
   children: React.ReactNode;
   variant?: 'primary' | 'outline';
   size?: 'sm' | 'md' | 'lg';

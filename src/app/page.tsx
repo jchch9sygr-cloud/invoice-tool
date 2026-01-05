@@ -1,126 +1,125 @@
 import Link from 'next/link';
-import { Zap, Check, ArrowRight } from 'lucide-react';
+import { Zap, Check, ArrowRight, FileText, Users, Download, Clock, Shield, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       {/* Navigation */}
-      <nav className="border-b border-gray-800">
+      <nav className="border-b border-gray-800/50 backdrop-blur-sm sticky top-0 z-50 bg-gray-950/80">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Zap className="h-6 w-6 text-blue-500" />
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <Zap className="h-5 w-5 text-white" />
+            </div>
             <span className="text-xl font-bold text-white">RechnungsBlitz</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link href="/login">
-              <Button variant="ghost">Anmelden</Button>
+              <Button variant="ghost" size="sm">Anmelden</Button>
             </Link>
             <Link href="/register">
-              <Button>Kostenlos starten</Button>
+              <Button size="sm">Kostenlos testen</Button>
             </Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-white mb-6">
-            Einfach Rechnungen schreiben
+      <section className="py-24 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent" />
+        <div className="max-w-4xl mx-auto text-center relative">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm mb-8">
+            <Sparkles className="h-4 w-4" />
+            <span>Einfach. Schnell. Professionell.</span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+            Rechnungen schreiben
+            <br />
+            <span className="text-blue-400">in Sekunden</span>
           </h1>
-          <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
-            Kunde anlegen. Rechnung ausfüllen. PDF herunterladen.
-            Kein Logo nötig. Keine Komplexität.
+          <p className="text-lg sm:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+            Keine komplizierte Software. Kein Buchhaltungs-Overkill.
+            Einfach Rechnung erstellen, PDF herunterladen, fertig.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/register">
-              <Button size="lg" className="text-lg px-8">
-                Kostenlos testen
+              <Button size="lg" className="text-lg px-8 h-14 bg-blue-600 hover:bg-blue-700">
+                Kostenlos starten
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <span className="text-gray-500">oder</span>
             <Link href="#pricing">
-              <Button variant="outline" size="lg" className="text-lg px-8">
-                60 € Lifetime kaufen
+              <Button variant="outline" size="lg" className="text-lg px-8 h-14">
+                Preise ansehen
               </Button>
             </Link>
           </div>
-          <p className="mt-4 text-sm text-gray-500">
-            3 Dokumente gratis. Danach 60 € einmalig oder 10 €/Monat.
+          <p className="mt-6 text-sm text-gray-500">
+            3 Dokumente gratis. Keine Kreditkarte erforderlich.
           </p>
         </div>
       </section>
 
-      {/* Problem */}
-      <section className="py-16 px-4 bg-gray-900">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center text-white mb-8">Andere Tools sind zu kompliziert</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {[
-              'Buchhaltungssoftware hat zu viele Funktionen',
-              'Monatliche Abos für wenige Rechnungen',
-              'Excel-Vorlagen machen Arbeit',
-              'Du brauchst nur ein korrektes PDF',
-            ].map((problem, i) => (
-              <div key={i} className="flex items-start gap-3 p-4 bg-gray-800 rounded-lg border border-gray-700">
-                <span className="text-gray-500 text-lg">-</span>
-                <p className="text-gray-400">{problem}</p>
-              </div>
-            ))}
+      {/* Trust Indicators */}
+      <section className="py-8 px-4 border-y border-gray-800/50">
+        <div className="max-w-4xl mx-auto flex flex-wrap justify-center gap-8 sm:gap-16 text-center">
+          <div>
+            <div className="text-2xl font-bold text-white">100%</div>
+            <div className="text-sm text-gray-500">DSGVO-konform</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white">30 Sek</div>
+            <div className="text-sm text-gray-500">bis zur ersten Rechnung</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-white">GoBD</div>
+            <div className="text-sm text-gray-500">konforme PDFs</div>
           </div>
         </div>
       </section>
 
-      {/* Solution */}
-      <section className="py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            So einfach geht's
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8 mt-12">
-            <div className="p-6">
-              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-gray-500">
-                1
-              </div>
-              <h3 className="font-semibold text-white mb-2">Kunde anlegen</h3>
-              <p className="text-gray-500">Name und Adresse eingeben</p>
-            </div>
-            <div className="p-6">
-              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-gray-500">
-                2
-              </div>
-              <h3 className="font-semibold text-white mb-2">Positionen eintragen</h3>
-              <p className="text-gray-500">Leistung, Menge, Preis</p>
-            </div>
-            <div className="p-6">
-              <div className="w-12 h-12 bg-gray-800 rounded-xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold text-gray-500">
-                3
-              </div>
-              <h3 className="font-semibold text-white mb-2">PDF herunterladen</h3>
-              <p className="text-gray-500">Ein Klick</p>
-            </div>
+      {/* How it Works */}
+      <section className="py-20 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              So einfach geht's
+            </h2>
+            <p className="text-gray-400">In drei Schritten zur fertigen Rechnung</p>
           </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="py-16 px-4 bg-gray-900">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-white mb-12">Was du bekommst</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
-              { title: 'Rechnungen & Angebote', desc: 'PDF-Export, sieht professionell aus' },
-              { title: 'Kundenverwaltung', desc: 'Einmal anlegen, immer wieder nutzen' },
-              { title: 'Kleinunternehmer (§19)', desc: 'Hinweistext optional aktivierbar' },
-              { title: 'Logo optional', desc: 'Kannst du hochladen, musst du aber nicht' },
-            ].map((feature, i) => (
-              <div key={i} className="flex items-start gap-4 p-4 bg-gray-800 rounded-lg border border-gray-700">
-                <Check className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-white">{feature.title}</h3>
-                  <p className="text-gray-400 text-sm">{feature.desc}</p>
+              {
+                icon: Users,
+                step: '01',
+                title: 'Kunde anlegen',
+                desc: 'Name und Adresse einmal eingeben, immer wieder verwenden',
+              },
+              {
+                icon: FileText,
+                step: '02',
+                title: 'Rechnung ausfüllen',
+                desc: 'Positionen eintragen, MwSt. wird automatisch berechnet',
+              },
+              {
+                icon: Download,
+                step: '03',
+                title: 'PDF herunterladen',
+                desc: 'Ein Klick und du hast deine professionelle Rechnung',
+              },
+            ].map((item, i) => (
+              <div key={i} className="relative group">
+                <div className="absolute -inset-px bg-gradient-to-b from-blue-500/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative p-8 bg-gray-900/50 border border-gray-800 rounded-2xl h-full">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                      <item.icon className="h-6 w-6 text-blue-400" />
+                    </div>
+                    <span className="text-4xl font-bold text-gray-800">{item.step}</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                  <p className="text-gray-400">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -128,28 +127,84 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="py-16 px-4" id="pricing">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center text-white mb-4">Preise</h2>
-          <p className="text-center text-gray-400 mb-12">
-            3 Dokumente kostenlos zum Testen.
-          </p>
-          <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-            {/* Lifetime */}
-            <div className="border-2 border-blue-500 rounded-2xl p-8 relative bg-gray-900">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                Einmalig
+      {/* Features */}
+      <section className="py-20 px-4 bg-gray-900/50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-white mb-4">Alles was du brauchst</h2>
+            <p className="text-gray-400">Keine Funktionen, die du nie nutzt</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { icon: FileText, title: 'Rechnungen & Angebote', desc: 'Professionelle PDFs mit deinem Branding' },
+              { icon: Users, title: 'Kundenverwaltung', desc: 'Einmal anlegen, immer wieder nutzen' },
+              { icon: Clock, title: 'Kleinunternehmer §19', desc: 'Ein Klick aktiviert den Hinweistext' },
+              { icon: Shield, title: 'GoBD-konform', desc: 'Alle Pflichtangaben automatisch' },
+              { icon: Download, title: 'PDF-Export', desc: 'Herunterladen oder direkt per E-Mail' },
+              { icon: Zap, title: 'Logo & Unterschrift', desc: 'Optional hochladen, Größe anpassbar' },
+            ].map((feature, i) => (
+              <div key={i} className="p-6 bg-gray-800/30 border border-gray-800 rounded-xl hover:border-gray-700 transition-colors">
+                <feature.icon className="h-8 w-8 text-blue-400 mb-4" />
+                <h3 className="font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-gray-400 text-sm">{feature.desc}</p>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Lifetime</h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-4xl font-bold text-white">60 €</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-20 px-4" id="pricing">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-white mb-4">Einfache Preise</h2>
+            <p className="text-gray-400">
+              Starte kostenlos mit 3 Dokumenten. Upgrade wenn du mehr brauchst.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* Free */}
+            <div className="border border-gray-800 rounded-2xl p-8 bg-gray-900/30">
+              <h3 className="text-lg font-semibold text-white mb-2">Kostenlos</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-bold text-white">0 €</span>
               </div>
               <ul className="space-y-3 mb-8">
                 {[
+                  '3 Dokumente',
+                  'PDF-Export',
+                  'Kundenverwaltung',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-gray-400">
+                    <Check className="h-5 w-5 text-gray-500" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/register">
+                <Button variant="outline" className="w-full">
+                  Kostenlos starten
+                </Button>
+              </Link>
+            </div>
+
+            {/* Yearly - Highlighted */}
+            <div className="border-2 border-blue-500 rounded-2xl p-8 relative bg-gray-900 shadow-lg shadow-blue-500/10">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                Beliebt
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Jahresabo</h3>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-4xl font-bold text-white">30 €</span>
+                <span className="text-gray-400">/ Jahr</span>
+              </div>
+              <p className="text-sm text-green-400 mb-6">Nur 2,50 € pro Monat</p>
+              <ul className="space-y-3 mb-8">
+                {[
                   'Unbegrenzte Dokumente',
-                  'Für immer nutzbar',
-                  'Keine weiteren Kosten',
+                  'Alle Features',
+                  'E-Mail-Versand',
+                  'Jährlich kündbar',
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-gray-300">
                     <Check className="h-5 w-5 text-green-400" />
@@ -158,34 +213,34 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link href="/register">
-                <Button className="w-full" size="lg">
-                  Lifetime kaufen
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                  Jetzt starten
                 </Button>
               </Link>
             </div>
 
             {/* Monthly */}
-            <div className="border border-gray-700 rounded-2xl p-8 bg-gray-900">
-              <h3 className="text-xl font-bold text-white mb-2">Monatlich</h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-4xl font-bold text-white">10 €</span>
+            <div className="border border-gray-800 rounded-2xl p-8 bg-gray-900/30">
+              <h3 className="text-lg font-semibold text-white mb-2">Monatsabo</h3>
+              <div className="flex items-baseline gap-1 mb-6">
+                <span className="text-4xl font-bold text-white">5 €</span>
                 <span className="text-gray-400">/ Monat</span>
               </div>
               <ul className="space-y-3 mb-8">
                 {[
                   'Unbegrenzte Dokumente',
+                  'Alle Features',
                   'Monatlich kündbar',
-                  'Zugang bis Monatsende',
                 ].map((item, i) => (
-                  <li key={i} className="flex items-center gap-2 text-gray-300">
-                    <Check className="h-5 w-5 text-green-400" />
+                  <li key={i} className="flex items-center gap-2 text-gray-400">
+                    <Check className="h-5 w-5 text-gray-500" />
                     <span>{item}</span>
                   </li>
                 ))}
               </ul>
               <Link href="/register">
-                <Button variant="outline" className="w-full" size="lg">
-                  Abo starten
+                <Button variant="outline" className="w-full">
+                  Monatlich starten
                 </Button>
               </Link>
             </div>
@@ -194,90 +249,56 @@ export default function LandingPage() {
       </section>
 
       {/* Target Audience */}
-      <section className="py-16 px-4 bg-gray-900">
+      <section className="py-20 px-4 bg-gray-900/50">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center text-white mb-12">Für wen ist das?</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Passt für - Grüne Karte */}
-            <div className="bg-gray-800 border border-green-500/30 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <Check className="h-5 w-5 text-green-400" />
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">Perfekt für</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { title: 'Freelancer', desc: 'Designer, Entwickler, Texter' },
+              { title: 'Nebenberufler', desc: 'Nebeneinkommen dokumentieren' },
+              { title: 'Kleinunternehmer', desc: 'Mit §19 UStG Regelung' },
+              { title: 'Gründer', desc: 'Schnell starten, günstig bleiben' },
+            ].map((item, i) => (
+              <div key={i} className="text-center p-6">
+                <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="h-6 w-6 text-green-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-white">Passt für dich</h3>
+                <h3 className="font-semibold text-white mb-1">{item.title}</h3>
+                <p className="text-gray-500 text-sm">{item.desc}</p>
               </div>
-              <ul className="space-y-4">
-                {[
-                  { title: 'Freelancer', desc: 'Designer, Entwickler, Berater' },
-                  { title: 'Nebenberuflich Selbstständig', desc: 'Nebeneinkommen, kleine Projekte' },
-                  { title: 'Kleinunternehmer', desc: 'Mit §19 UStG Regelung' },
-                  { title: 'Wenige Rechnungen', desc: 'Bis ca. 20 Rechnungen/Monat' },
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <Check className="h-5 w-5 text-green-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-white font-medium">{item.title}</p>
-                      <p className="text-gray-400 text-sm">{item.desc}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Passt nicht für - Dezente Karte */}
-            <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center">
-                  <span className="text-gray-400 text-lg">—</span>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-400">Eher nicht geeignet</h3>
-              </div>
-              <ul className="space-y-4">
-                {[
-                  { title: 'Buchhaltungspflicht', desc: 'Du brauchst ein vollständiges Buchhaltungstool' },
-                  { title: 'Elster-Anbindung', desc: 'Direktübertragung ans Finanzamt nicht möglich' },
-                  { title: 'Viele Features', desc: 'Lagerverwaltung, Mahnwesen, etc.' },
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="text-gray-500 shrink-0 mt-0.5">—</span>
-                    <div>
-                      <p className="text-gray-300">{item.title}</p>
-                      <p className="text-gray-500 text-sm">{item.desc}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-center text-white mb-8">Fragen</h2>
+          <h2 className="text-3xl font-bold text-center text-white mb-12">Häufige Fragen</h2>
           <div className="space-y-4">
             {[
               {
                 q: 'Brauche ich ein Logo?',
-                a: 'Nein. Du kannst eins hochladen, musst aber nicht.',
+                a: 'Nein. Du kannst ein Logo hochladen, es ist aber komplett optional. Deine Rechnungen sehen auch ohne Logo professionell aus.',
               },
               {
-                q: 'Kleinunternehmer?',
-                a: 'Ja. Toggle in den Einstellungen, §19-Hinweis erscheint automatisch.',
+                q: 'Bin ich Kleinunternehmer - was muss ich tun?',
+                a: 'Einfach in den Einstellungen den Schalter aktivieren. Der §19-Hinweis erscheint dann automatisch auf allen Dokumenten.',
               },
               {
-                q: 'Was kostet das?',
-                a: '3 Dokumente gratis. Danach 60 € einmalig oder 10 €/Monat.',
+                q: 'Kann ich kündigen?',
+                a: 'Jederzeit. Beim Monatsabo hast du Zugang bis zum Monatsende, beim Jahresabo bis zum Jahresende.',
               },
               {
-                q: 'Und wenn ich kündige?',
-                a: 'Beim Abo: Zugang bis Monatsende. Bei Lifetime: Für immer nutzbar.',
+                q: 'Sind die Rechnungen rechtsgültig?',
+                a: 'Ja. Alle PDFs enthalten die gesetzlich vorgeschriebenen Pflichtangaben und sind GoBD-konform.',
               },
             ].map((faq, i) => (
-              <div key={i} className="bg-gray-800 rounded-lg border border-gray-700 p-5">
-                <h3 className="font-semibold text-white mb-1">{faq.q}</h3>
-                <p className="text-gray-400 text-sm">{faq.a}</p>
+              <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
+                <h3 className="font-semibold text-white mb-2">{faq.q}</h3>
+                <p className="text-gray-400">{faq.a}</p>
               </div>
             ))}
           </div>
@@ -285,20 +306,19 @@ export default function LandingPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-16 px-4 bg-gray-900 border-t border-gray-800">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-gray-400 mb-4">
-            Einfach ausprobieren. 3 Dokumente gratis.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <section className="py-20 px-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-gradient-to-b from-blue-500/10 to-transparent border border-blue-500/20 rounded-3xl p-12 text-center">
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Bereit für einfache Rechnungen?
+            </h2>
+            <p className="text-gray-400 mb-8">
+              Starte jetzt kostenlos mit 3 Dokumenten. Keine Kreditkarte nötig.
+            </p>
             <Link href="/register">
-              <Button size="lg" className="text-lg px-8">
+              <Button size="lg" className="text-lg px-10 h-14 bg-blue-600 hover:bg-blue-700">
                 Kostenlos starten
-              </Button>
-            </Link>
-            <Link href="#pricing">
-              <Button variant="outline" size="lg" className="text-lg px-8">
-                60 € Lifetime
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
           </div>
@@ -306,7 +326,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-gray-800">
+      <footer className="py-8 px-4 border-t border-gray-800/50">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-gray-500">
             <Zap className="h-4 w-4" />

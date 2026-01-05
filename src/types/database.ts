@@ -15,6 +15,9 @@ export interface Profile {
   email: string | null;
   tax_number: string | null;
   logo_url: string | null;
+  logo_size: number | null; // Höhe in Pixel (40-120)
+  signature_url: string | null;
+  signature_size: number | null; // Höhe in Pixel (30-80)
   is_kleinunternehmer: boolean;
   allow_paid_invoice_deletion: boolean;
   bank_name: string | null;
@@ -48,6 +51,9 @@ export interface ProfileSnapshot {
   email: string | null;
   tax_number: string | null;
   logo_url: string | null;
+  logo_size: number | null;
+  signature_url: string | null;
+  signature_size: number | null;
   is_kleinunternehmer: boolean;
   bank_name: string | null;
   iban: string | null;
@@ -94,7 +100,7 @@ export interface Subscription {
   user_id: string;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
-  plan: 'lifetime' | 'monthly' | 'free';
+  plan: 'yearly' | 'monthly' | 'free';
   status: 'active' | 'cancelled' | 'expired';
   cancel_at_period_end: boolean;
   current_period_end: string | null;

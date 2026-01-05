@@ -10,16 +10,16 @@ export const stripe = stripeSecretKey
   : (null as unknown as Stripe);
 
 export const PLANS = {
-  lifetime: {
-    priceId: process.env.STRIPE_PRICE_LIFETIME!,
-    name: 'Einmalzahlung',
-    price: 60,
-    mode: 'payment' as const,
+  yearly: {
+    priceId: process.env.STRIPE_PRICE_YEARLY!,
+    name: 'Jahresabo',
+    price: 30,
+    mode: 'subscription' as const,
   },
   monthly: {
     priceId: process.env.STRIPE_PRICE_MONTHLY!,
-    name: 'Monatlich',
-    price: 10,
+    name: 'Monatsabo',
+    price: 5,
     mode: 'subscription' as const,
   },
 };

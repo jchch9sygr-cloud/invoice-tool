@@ -29,6 +29,9 @@ export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<Partial<Subscription> | null>(null);
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+  const [signatureError, setSignatureError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Profile>>({
     company_name: '',
     address: '',
@@ -42,6 +45,8 @@ export default function SettingsPage() {
     bank_name: '',
     iban: '',
     bic: '',
+    logo_size: 56,
+    signature_size: 50,
   });
 
   useEffect(() => {
@@ -58,9 +63,16 @@ export default function SettingsPage() {
     ]);
 
     if (profileData) {
-      setFormData(profileData);
+      setFormData({
+        ...profileData,
+        logo_size: profileData.logo_size || 56,
+        signature_size: profileData.signature_size || 50,
+      });
       if (profileData.logo_url) {
         setLogoPreview(profileData.logo_url);
+      }
+      if (profileData.signature_url) {
+        setSignaturePreview(profileData.signature_url);
       }
     }
 
@@ -103,6 +115,29 @@ export default function SettingsPage() {
     setLogoPreview(URL.createObjectURL(file));
   };
 
+  const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setSignatureError('Nur PNG, JPG, GIF oder WebP erlaubt.');
+      e.target.value = '';
+      return;
+    }
+
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setSignatureError('Unterschrift darf maximal 2 MB groß sein.');
+      e.target.value = '';
+      return;
+    }
+
+    setSignatureError(null);
+    setSignatureFile(file);
+    setSignaturePreview(URL.createObjectURL(file));
+  };
+
   const handleCancelSubscription = async () => {
     if (!confirm('Möchtest du dein Abo wirklich kündigen? Du behältst den Zugang bis zum Ende der Laufzeit.')) {
       return;
@@ -134,12 +169,14 @@ export default function SettingsPage() {
     setLoading(true);
     setSaved(false);
     setLogoError(null);
+    setSignatureError(null);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       let logoUrl = formData.logo_url;
+      let signatureUrl = formData.signature_url;
 
       // Upload logo if changed
       if (logoFile) {
@@ -162,18 +199,41 @@ export default function SettingsPage() {
         }
       }
 
+      // Upload signature if changed
+      if (signatureFile) {
+        const fileExt = signatureFile.name.split('.').pop()?.toLowerCase();
+        const fileName = `signature_${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('logos')
+          .upload(filePath, signatureFile, { upsert: true });
+
+        if (uploadError) {
+          console.error('Signature upload error:', uploadError);
+          setSignatureError('Unterschrift-Upload fehlgeschlagen.');
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('logos')
+            .getPublicUrl(filePath);
+          signatureUrl = publicUrl;
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
           ...formData,
           logo_url: logoUrl,
+          signature_url: signatureUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', user.id);
 
       if (error) throw error;
 
-      setLogoFile(null); // Reset file after successful upload
+      setLogoFile(null);
+      setSignatureFile(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (error) {
@@ -203,7 +263,7 @@ export default function SettingsPage() {
                   <div>
                     <p className="font-medium text-white">Kostenloser Tarif</p>
                     <p className="text-sm text-gray-400">
-                      {3 - (subscription.documents_count || 0)} von 3 Dokumenten übrig
+                      {Math.max(0, 3 - (subscription.documents_count || 0))} von 3 Dokumenten übrig
                     </p>
                   </div>
                   <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm font-medium">
@@ -213,38 +273,38 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-gray-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-lg text-white">60 €</span>
-                      <span className="text-sm text-gray-400">einmalig</span>
+                      <span className="font-semibold text-lg text-white">30 €</span>
+                      <span className="text-sm text-gray-400">/ Jahr</span>
                     </div>
                     <p className="text-sm text-gray-400 mb-4">
-                      Lebenslanger Zugang, unbegrenzte Dokumente
+                      Jährlich, unbegrenzte Dokumente
                     </p>
-                    <UpgradeButton plan="lifetime">
-                      Jetzt kaufen
+                    <UpgradeButton plan="yearly">
+                      Jahresabo starten
                     </UpgradeButton>
                   </div>
                   <div className="border border-gray-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-lg text-white">10 €</span>
+                      <span className="font-semibold text-lg text-white">5 €</span>
                       <span className="text-sm text-gray-400">/ Monat</span>
                     </div>
                     <p className="text-sm text-gray-400 mb-4">
                       Monatlich kündbar, unbegrenzte Dokumente
                     </p>
                     <UpgradeButton plan="monthly" variant="outline">
-                      Abo starten
+                      Monatsabo starten
                     </UpgradeButton>
                   </div>
                 </div>
               </div>
-            ) : subscription?.plan === 'lifetime' ? (
+            ) : subscription?.plan === 'yearly' ? (
               <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-800 rounded-lg">
                 <div className="flex items-center gap-3">
                   <CheckCircle className="h-6 w-6 text-green-500" />
                   <div>
-                    <p className="font-medium text-green-400">Lifetime-Zugang</p>
+                    <p className="font-medium text-green-400">Jahresabo</p>
                     <p className="text-sm text-green-600">
-                      Unbegrenzte Rechnungen & Angebote - für immer
+                      Unbegrenzte Rechnungen & Angebote
                     </p>
                   </div>
                 </div>
@@ -289,11 +349,11 @@ export default function SettingsPage() {
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <UpgradeButton plan="lifetime">
-                    Lifetime kaufen (60 €)
+                  <UpgradeButton plan="yearly">
+                    Jahresabo (30 €/Jahr)
                   </UpgradeButton>
                   <UpgradeButton plan="monthly" variant="outline">
-                    Abo erneuern (10 €/Monat)
+                    Monatsabo (5 €/Monat)
                   </UpgradeButton>
                 </div>
               </div>
@@ -314,17 +374,17 @@ export default function SettingsPage() {
                   </span>
                 </div>
 
-                {/* Upgrade zu Lifetime */}
+                {/* Upgrade zu Jahresabo */}
                 <div className="border border-blue-800 bg-blue-900/20 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-blue-400">Auf Lifetime upgraden</p>
+                      <p className="font-medium text-blue-400">Auf Jahresabo wechseln</p>
                       <p className="text-sm text-gray-400">
-                        Einmalig 60 € - nie wieder zahlen
+                        30 €/Jahr - spare 30 € gegenüber monatlich
                       </p>
                     </div>
-                    <UpgradeButton plan="lifetime" size="sm">
-                      Upgrade
+                    <UpgradeButton plan="yearly" size="sm">
+                      Wechseln
                     </UpgradeButton>
                   </div>
                 </div>
@@ -402,6 +462,91 @@ export default function SettingsPage() {
                     )}
                   </div>
                 </div>
+                {/* Logo Größe */}
+                {logoPreview && (
+                  <div className="mt-3">
+                    <label className="block text-xs text-gray-400 mb-1">
+                      Logo-Größe: {formData.logo_size || 56}px
+                    </label>
+                    <input
+                      type="range"
+                      min="30"
+                      max="100"
+                      value={formData.logo_size || 56}
+                      onChange={(e) => setFormData({ ...formData, logo_size: parseInt(e.target.value) })}
+                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Unterschrift Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Unterschrift (optional)
+                </label>
+                <div className="flex items-center gap-4">
+                  {signaturePreview ? (
+                    <img
+                      src={signaturePreview}
+                      alt="Unterschrift"
+                      style={{ height: `${formData.signature_size || 50}px` }}
+                      className="w-auto max-w-[150px] object-contain rounded border border-gray-700 bg-white p-1"
+                    />
+                  ) : (
+                    <div className="h-12 w-24 bg-gray-800 rounded border border-gray-700 flex items-center justify-center">
+                      <span className="text-xs text-gray-500">Keine</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer">
+                        <span className="text-sm text-blue-400 hover:text-blue-300 hover:underline">
+                          {signaturePreview ? 'Ändern' : 'Hochladen'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                          className="hidden"
+                          onChange={handleSignatureChange}
+                        />
+                      </label>
+                      {signaturePreview && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSignaturePreview(null);
+                            setSignatureFile(null);
+                            setFormData({ ...formData, signature_url: null });
+                          }}
+                          className="text-sm text-red-400 hover:text-red-300 hover:underline"
+                        >
+                          Entfernen
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">Für Rechnungen & Angebote</span>
+                    {signatureError && (
+                      <span className="text-xs text-red-400">{signatureError}</span>
+                    )}
+                  </div>
+                </div>
+                {/* Unterschrift Größe */}
+                {signaturePreview && (
+                  <div className="mt-3">
+                    <label className="block text-xs text-gray-400 mb-1">
+                      Unterschrift-Größe: {formData.signature_size || 50}px
+                    </label>
+                    <input
+                      type="range"
+                      min="25"
+                      max="80"
+                      value={formData.signature_size || 50}
+                      onChange={(e) => setFormData({ ...formData, signature_size: parseInt(e.target.value) })}
+                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                  </div>
+                )}
               </div>
 
               <Input

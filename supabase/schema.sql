@@ -16,6 +16,9 @@ CREATE TABLE profiles (
   email TEXT,
   tax_number TEXT,
   logo_url TEXT,
+  logo_size INTEGER DEFAULT 60,
+  signature_url TEXT,
+  signature_size INTEGER DEFAULT 50,
   is_kleinunternehmer BOOLEAN DEFAULT false,
   bank_name TEXT,
   iban TEXT,
@@ -72,7 +75,7 @@ CREATE TABLE subscriptions (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
   stripe_customer_id TEXT,
   stripe_subscription_id TEXT,
-  plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'lifetime', 'monthly')),
+  plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'yearly', 'monthly')),
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'expired')),
   cancel_at_period_end BOOLEAN DEFAULT false,
   current_period_end TIMESTAMP WITH TIME ZONE,
@@ -218,6 +221,11 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('logos', 'logos', true)
 ON CONFLICT DO NOTHING;
 
+-- Storage bucket for signatures
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('signatures', 'signatures', true)
+ON CONFLICT DO NOTHING;
+
 -- Storage policy for logos
 CREATE POLICY "Users can upload own logo"
   ON storage.objects FOR INSERT
@@ -241,5 +249,31 @@ CREATE POLICY "Users can delete own logo"
   ON storage.objects FOR DELETE
   USING (
     bucket_id = 'logos' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Storage policies for signatures
+CREATE POLICY "Users can upload own signature"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'signatures' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Anyone can view signatures"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'signatures');
+
+CREATE POLICY "Users can update own signature"
+  ON storage.objects FOR UPDATE
+  USING (
+    bucket_id = 'signatures' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can delete own signature"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'signatures' AND
     auth.uid()::text = (storage.foldername(name))[1]
   );
