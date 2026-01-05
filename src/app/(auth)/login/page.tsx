@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,7 +15,10 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const isVerified = searchParams.get('verified') === 'true';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +56,13 @@ export default function LoginPage() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isVerified && (
+            <div className="rounded-lg bg-green-900/50 border border-green-800 p-3 text-sm text-green-400 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 flex-shrink-0" />
+              <span>E-Mail bestätigt! Du kannst dich jetzt anmelden.</span>
+            </div>
+          )}
+
           {error && (
             <div className="rounded-lg bg-red-900/50 border border-red-800 p-3 text-sm text-red-400">
               {error}
