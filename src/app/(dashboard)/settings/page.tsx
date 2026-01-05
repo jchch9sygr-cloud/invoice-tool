@@ -298,7 +298,7 @@ export default function SettingsPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-800 rounded-lg">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-6 w-6 text-green-500" />
@@ -313,6 +313,22 @@ export default function SettingsPage() {
                     Aktiv
                   </span>
                 </div>
+
+                {/* Upgrade zu Lifetime */}
+                <div className="border border-blue-800 bg-blue-900/20 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-blue-400">Auf Lifetime upgraden</p>
+                      <p className="text-sm text-gray-400">
+                        Einmalig 60 € - nie wieder zahlen
+                      </p>
+                    </div>
+                    <UpgradeButton plan="lifetime" size="sm">
+                      Upgrade
+                    </UpgradeButton>
+                  </div>
+                </div>
+
                 <div className="flex justify-end">
                   <Button
                     variant="ghost"

@@ -37,7 +37,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/');
   };
 
   const handleNavClick = () => {

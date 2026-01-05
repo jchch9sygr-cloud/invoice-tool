@@ -55,9 +55,10 @@ export async function POST(request: NextRequest) {
         .eq('user_id', user.id);
     }
 
-    // Create checkout session
+    // Create checkout session with Card + PayPal
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
+      payment_method_types: ['card', 'paypal'],
       line_items: [
         {
           price: selectedPlan.priceId,

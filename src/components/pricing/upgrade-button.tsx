@@ -8,9 +8,10 @@ interface UpgradeButtonProps {
   plan: 'lifetime' | 'monthly';
   children: React.ReactNode;
   variant?: 'primary' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function UpgradeButton({ plan, children, variant = 'primary' }: UpgradeButtonProps) {
+export function UpgradeButton({ plan, children, variant = 'primary', size }: UpgradeButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +44,7 @@ export function UpgradeButton({ plan, children, variant = 'primary' }: UpgradeBu
 
   return (
     <div className="w-full">
-      <Button onClick={handleClick} disabled={loading} variant={variant} className="w-full">
+      <Button onClick={handleClick} disabled={loading} variant={variant} size={size} className="w-full">
         {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
         {children}
       </Button>
