@@ -2,6 +2,7 @@
 
 import { useState, createContext, useContext } from 'react';
 import { Sidebar } from './sidebar';
+import { AutoLogout } from '@/components/auth/auto-logout';
 
 interface MobileMenuContextType {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
   return (
     <MobileMenuContext.Provider value={{ isOpen, open, close, toggle }}>
+      <AutoLogout />
       <div className="min-h-screen bg-gray-950">
         <Sidebar isOpen={isOpen} onClose={close} />
         {/* Main Content - responsive margin */}

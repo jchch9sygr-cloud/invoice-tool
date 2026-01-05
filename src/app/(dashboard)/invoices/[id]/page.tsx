@@ -66,17 +66,17 @@ export default async function InvoiceDetailPage({
   return (
     <div>
       <PageHeader title={`Rechnung ${document.number}`}>
-        <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <Link href="/invoices">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Zurück</span>
+            <Button variant="outline" size="sm" className="px-2 sm:px-3">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline sm:ml-1">Zurück</span>
             </Button>
           </Link>
           <Link href={`/invoices/${id}/pdf`}>
-            <Button size="sm">
-              <Download className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">PDF</span>
+            <Button size="sm" className="px-2 sm:px-3">
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline sm:ml-1">PDF</span>
             </Button>
           </Link>
           <DocumentActions document={document} />
