@@ -298,19 +298,33 @@ export default function SettingsPage() {
                 </div>
               </div>
             ) : subscription?.plan === 'yearly' ? (
-              <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-800 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-6 w-6 text-green-500" />
-                  <div>
-                    <p className="font-medium text-green-400">Jahresabo</p>
-                    <p className="text-sm text-green-600">
-                      Unbegrenzte Rechnungen & Angebote
-                    </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-6 w-6 text-green-500" />
+                    <div>
+                      <p className="font-medium text-green-400">Jahresabo</p>
+                      <p className="text-sm text-green-600">
+                        Unbegrenzte Rechnungen & Angebote
+                      </p>
+                    </div>
                   </div>
+                  <span className="px-3 py-1 bg-green-900 text-green-400 rounded-full text-sm font-medium">
+                    Aktiv
+                  </span>
                 </div>
-                <span className="px-3 py-1 bg-green-900 text-green-400 rounded-full text-sm font-medium">
-                  Aktiv
-                </span>
+
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCancelSubscription}
+                    disabled={cancelLoading}
+                    className="text-gray-500 hover:text-red-400"
+                  >
+                    {cancelLoading ? 'Wird gekündigt...' : 'Abo kündigen'}
+                  </Button>
+                </div>
               </div>
             ) : subscription?.cancel_at_period_end ? (
               <div className="space-y-3">
