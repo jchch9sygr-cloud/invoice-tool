@@ -36,17 +36,22 @@ export async function POST() {
     }
 
     // Cancel at period end (user keeps access until subscription ends)
-    const stripeSubscription = await stripe.subscriptions.update(
+    await stripe.subscriptions.update(
       subscription.stripe_subscription_id,
       { cancel_at_period_end: true }
     );
 
-    // Get current period end from the subscription response
+    // Fetch subscription to get current_period_end
+    const stripeSubscription = await stripe.subscriptions.retrieve(
+      subscription.stripe_subscription_id
+    );
+
+    // Get current period end from the subscription
     let periodEnd: string | null = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const subData = stripeSubscription as any;
-    if (subData.current_period_end) {
-      periodEnd = new Date(subData.current_period_end * 1000).toISOString();
+    const currentPeriodEnd = (stripeSubscription as any).current_period_end;
+    if (currentPeriodEnd) {
+      periodEnd = new Date(currentPeriodEnd * 1000).toISOString();
     }
 
     // Update database
