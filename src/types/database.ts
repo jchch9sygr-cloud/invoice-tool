@@ -16,6 +16,7 @@ export interface Profile {
   tax_number: string | null;
   logo_url: string | null;
   is_kleinunternehmer: boolean;
+  allow_paid_invoice_deletion: boolean;
   bank_name: string | null;
   iban: string | null;
   bic: string | null;
@@ -38,6 +39,21 @@ export interface Customer {
 export type DocumentType = 'invoice' | 'quote';
 export type DocumentStatus = 'draft' | 'sent' | 'paid' | 'cancelled';
 
+export interface ProfileSnapshot {
+  company_name: string | null;
+  address: string | null;
+  city: string | null;
+  zip: string | null;
+  phone: string | null;
+  email: string | null;
+  tax_number: string | null;
+  logo_url: string | null;
+  is_kleinunternehmer: boolean;
+  bank_name: string | null;
+  iban: string | null;
+  bic: string | null;
+}
+
 export interface Document {
   id: string;
   user_id: string;
@@ -50,8 +66,14 @@ export interface Document {
   notes: string | null;
   vat_rate: number;
   location: string | null;
+  salutation: string | null;
   introduction_text: string | null;
   sender_name: string | null;
+  paid_at: string | null;
+  profile_snapshot: ProfileSnapshot | null;
+  // Courtage fields
+  courtage_base_amount: number | null;
+  courtage_percentage: number | null;
   created_at: string;
   customer?: Customer;
   line_items?: LineItem[];

@@ -1,13 +1,14 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/header';
-import { Card, CardContent } from '@/components/ui/card';
+import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
 import { Download, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { formatCurrency, formatDate, calculateTotal, calculateVat, calculateGrossTotal, getKleinunternehmerText } from '@/lib/utils';
+import { DocumentActions } from '@/components/documents/document-actions';
+import { DocumentPreview } from '@/components/documents/document-preview';
 
 export default async function QuoteDetailPage({
   params,
@@ -39,35 +40,47 @@ export default async function QuoteDetailPage({
     notFound();
   }
 
-  const netTotal = calculateTotal(document.line_items || []);
+  // Calculate positions total
+  const positionsTotal = (document.line_items || []).reduce(
+    (sum: number, item: any) => sum + (item.quantity * item.unit_price),
+    0
+  );
+
+  // Calculate courtage if present
+  const hasCourtage = document.courtage_base_amount && document.courtage_percentage;
+  const courtageAmount = hasCourtage
+    ? (document.courtage_base_amount * document.courtage_percentage) / 100
+    : 0;
+
+  const netTotal = positionsTotal + courtageAmount;
   const vatRate = document.vat_rate || 0;
-  const vatAmount = calculateVat(netTotal, vatRate);
-  const grossTotal = calculateGrossTotal(netTotal, vatRate);
+  const vatAmount = (netTotal * vatRate) / 100;
+  const grossTotal = netTotal + vatAmount;
 
   return (
     <div>
-      <Header title={`Angebot ${document.number}`}>
-        <div className="flex gap-2">
+      <PageHeader title={`Angebot ${document.number}`}>
+        <div className="flex flex-wrap gap-2 items-center">
           <Link href="/quotes">
             <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Zurück
+              <ArrowLeft className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Zurück</span>
             </Button>
           </Link>
           <Link href={`/quotes/${id}/pdf`}>
             <Button size="sm">
-              <Download className="h-4 w-4 mr-1" />
-              PDF herunterladen
+              <Download className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">PDF</span>
             </Button>
           </Link>
+          <DocumentActions document={document} />
         </div>
-      </Header>
+      </PageHeader>
 
-      <div className="p-6 max-w-4xl">
+      <div className="p-4 sm:p-6 max-w-4xl">
         {/* Vorschau im DIN 5008 Stil - wie PDF */}
-        <Card className="bg-white">
-          <CardContent className="p-10 text-gray-900">
-            {/* Kopfbereich: Logo links, Absender rechts */}
+        <DocumentPreview>
+          {/* Kopfbereich: Logo links, Absender rechts */}
             <div className="flex justify-between mb-6">
               <div>
                 {profile?.logo_url && (
@@ -114,30 +127,24 @@ export default async function QuoteDetailPage({
 
             {/* Anrede und Einleitung */}
             <div className="mb-4 text-sm leading-relaxed">
-              <p className="mb-1">Sehr geehrte Damen und Herren,</p>
+              <p className="mb-1">{document.salutation || 'Sehr geehrte Damen und Herren,'}</p>
               {document.introduction_text && (
                 <p>{document.introduction_text}</p>
               )}
             </div>
 
-            {/* Positionstabelle */}
+            {/* Positionstabelle - Vereinfacht */}
             <table className="w-full mb-4 text-sm">
               <thead>
                 <tr className="bg-gray-100 text-left text-xs text-gray-700">
                   <th className="p-2">Beschreibung</th>
-                  <th className="p-2 text-right">Menge</th>
-                  <th className="p-2 text-center">Einheit</th>
-                  <th className="p-2 text-right">Einzelpreis</th>
-                  <th className="p-2 text-right">Gesamt</th>
+                  <th className="p-2 text-right">Betrag</th>
                 </tr>
               </thead>
               <tbody>
                 {document.line_items?.map((item: any) => (
                   <tr key={item.id} className="border-b border-gray-200">
                     <td className="p-2">{item.description}</td>
-                    <td className="p-2 text-right">{item.quantity}</td>
-                    <td className="p-2 text-center">{item.unit}</td>
-                    <td className="p-2 text-right">{formatCurrency(item.unit_price)}</td>
                     <td className="p-2 text-right">
                       {formatCurrency(item.quantity * item.unit_price)}
                     </td>
@@ -148,17 +155,32 @@ export default async function QuoteDetailPage({
 
             {/* Summenblock rechts */}
             <div className="flex justify-end mb-6">
-              <div className="text-right text-sm min-w-[180px]">
+              <div className="text-sm min-w-[320px]">
+                {/* Nettobetrag (Positionen) */}
                 <div className="flex justify-between py-1">
                   <span className="text-gray-600">Nettobetrag:</span>
-                  <span>{formatCurrency(netTotal)}</span>
+                  <span>{formatCurrency(positionsTotal)}</span>
                 </div>
+
+                {/* Courtage Zeile */}
+                {hasCourtage && (
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-600">
+                      Courtage von {document.courtage_percentage}% von {formatCurrency(document.courtage_base_amount)}:
+                    </span>
+                    <span>{formatCurrency(courtageAmount)}</span>
+                  </div>
+                )}
+
+                {/* USt. */}
                 {vatRate > 0 && (
                   <div className="flex justify-between py-1">
                     <span className="text-gray-600">{vatRate}% USt.:</span>
                     <span>{formatCurrency(vatAmount)}</span>
                   </div>
                 )}
+
+                {/* Gesamtbetrag */}
                 <div className="flex justify-between items-baseline pt-2 mt-1 border-t border-gray-900 font-bold text-base">
                   <span>Gesamtbetrag:</span>
                   <span>{formatCurrency(grossTotal)}</span>
@@ -210,8 +232,7 @@ export default async function QuoteDetailPage({
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </DocumentPreview>
       </div>
     </div>
   );

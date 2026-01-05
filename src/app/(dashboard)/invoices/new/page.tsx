@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/header';
+import { PageHeader } from '@/components/layout/page-header';
 import { DocumentForm } from '@/components/documents/document-form';
 import { redirect } from 'next/navigation';
 
@@ -34,8 +34,8 @@ export default async function NewInvoicePage() {
 
   return (
     <div>
-      <Header title="Neue Rechnung" />
-      <div className="p-6 max-w-3xl">
+      <PageHeader title="Neue Rechnung" />
+      <div className="p-4 sm:p-6 max-w-3xl">
         <DocumentForm
           type="invoice"
           customers={customers || []}

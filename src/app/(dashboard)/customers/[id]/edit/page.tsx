@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Header } from '@/components/layout/header';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -92,7 +92,7 @@ export default function EditCustomerPage() {
   if (pageLoading) {
     return (
       <div>
-        <Header title="Kunde bearbeiten" />
+        <PageHeader title="Kunde bearbeiten" />
         <div className="p-6 flex justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
         </div>
@@ -102,9 +102,9 @@ export default function EditCustomerPage() {
 
   return (
     <div>
-      <Header title="Kunde bearbeiten" />
+      <PageHeader title="Kunde bearbeiten" />
 
-      <div className="p-6 max-w-2xl">
+      <div className="p-4 sm:p-6 max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>Kundendaten</CardTitle>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { stripe, PLANS } from '@/lib/stripe';
+import { checkoutSchema, validateRequest } from '@/lib/validations';
 
 export async function POST(request: NextRequest) {
   if (!stripe) {
@@ -15,9 +16,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { plan } = await request.json();
+    const body = await request.json();
+    const validation = validateRequest(checkoutSchema, body);
 
-    if (!plan || !PLANS[plan as keyof typeof PLANS]) {
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { plan } = validation.data;
+
+    if (!PLANS[plan as keyof typeof PLANS]) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 

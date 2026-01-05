@@ -3,11 +3,11 @@
 import { Document, LineItem } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, FileCheck, Download, Trash2, Eye } from 'lucide-react';
+import { FileText, FileCheck, Download, Trash2, Eye, MoreVertical, Loader2, Settings } from 'lucide-react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDate, calculateTotal } from '@/lib/utils';
+import { useState, useRef, useEffect } from 'react';
 
 interface DocumentWithRelations extends Omit<Document, 'customer'> {
   customer?: { name: string } | null;
@@ -19,16 +19,130 @@ interface DocumentListProps {
   type: 'invoice' | 'quote';
 }
 
+function ActionMenu({
+  docId,
+  basePath,
+  onDelete
+}: {
+  docId: string;
+  basePath: string;
+  onDelete: () => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white sm:hidden"
+        aria-label="Aktionen"
+      >
+        <MoreVertical className="h-5 w-5" />
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-gray-700 bg-gray-800 py-1 shadow-xl sm:hidden">
+          <Link
+            href={`${basePath}/${docId}`}
+            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-gray-700"
+            onClick={() => setIsOpen(false)}
+          >
+            <Eye className="h-4 w-4" />
+            Anzeigen
+          </Link>
+          <Link
+            href={`${basePath}/${docId}/pdf`}
+            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-gray-700"
+            onClick={() => setIsOpen(false)}
+          >
+            <Download className="h-4 w-4" />
+            PDF herunterladen
+          </Link>
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              onDelete();
+            }}
+            className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-gray-700"
+          >
+            <Trash2 className="h-4 w-4" />
+            Löschen
+          </button>
+        </div>
+      )}
+
+      {/* Desktop Buttons */}
+      <div className="hidden items-center gap-1 sm:flex">
+        <Link href={`${basePath}/${docId}`}>
+          <Button variant="ghost" size="sm">
+            <Eye className="h-4 w-4" />
+          </Button>
+        </Link>
+        <Link href={`${basePath}/${docId}/pdf`}>
+          <Button variant="ghost" size="sm">
+            <Download className="h-4 w-4" />
+          </Button>
+        </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-4 w-4 text-red-500" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function DocumentList({ documents, type }: DocumentListProps) {
   const router = useRouter();
-  const supabase = createClient();
   const basePath = type === 'invoice' ? '/invoices' : '/quotes';
+  const [deleteDoc, setDeleteDoc] = useState<DocumentWithRelations | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<{ message: string; showSettings?: boolean } | null>(null);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Dokument wirklich löschen?')) return;
+  const handleDelete = async () => {
+    if (!deleteDoc) return;
 
-    await supabase.from('documents').delete().eq('id', id);
-    router.refresh();
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch(`/api/documents/${deleteDoc.id}/delete`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError({
+          message: data.error || 'Löschen fehlgeschlagen',
+          showSettings: data.hint === 'settings',
+        });
+        return;
+      }
+
+      setDeleteDoc(null);
+      router.refresh();
+    } catch (error) {
+      setDeleteError({
+        message: error instanceof Error ? error.message : 'Löschen fehlgeschlagen',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -46,7 +160,7 @@ export function DocumentList({ documents, type }: DocumentListProps) {
     };
     return (
       <span
-        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
           styles[status as keyof typeof styles] || styles.draft
         }`}
       >
@@ -61,57 +175,141 @@ export function DocumentList({ documents, type }: DocumentListProps) {
         const total = calculateTotal(doc.line_items || []);
 
         return (
-          <Card key={doc.id} className="hover:border-blue-600 transition-colors">
-            <CardContent className="py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  {type === 'invoice' ? (
-                    <FileText className="h-8 w-8 text-blue-500" />
-                  ) : (
-                    <FileCheck className="h-8 w-8 text-green-500" />
-                  )}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-white">{doc.number}</h3>
+          <Card key={doc.id} className="hover:border-blue-600/50 transition-colors">
+            <CardContent className="p-4">
+              {/* Mobile Layout: Stacked */}
+              <div className="flex items-start justify-between gap-3">
+                {/* Icon + Info */}
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <div className="shrink-0 mt-0.5">
+                    {type === 'invoice' ? (
+                      <FileText className="h-6 w-6 text-blue-500 sm:h-8 sm:w-8" />
+                    ) : (
+                      <FileCheck className="h-6 w-6 text-green-500 sm:h-8 sm:w-8" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    {/* Number + Badge */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-medium text-white text-sm sm:text-base">{doc.number}</h3>
                       {getStatusBadge(doc.status)}
                     </div>
-                    <p className="text-sm text-gray-400">
-                      <span className="text-gray-300">{doc.customer?.name || 'Kein Kunde'}</span>
-                      <span className="mx-2">·</span>
-                      <span>{formatDate(doc.date)}</span>
+                    {/* Customer + Date */}
+                    <p className="text-sm text-gray-400 mt-0.5 truncate">
+                      {doc.customer?.name || 'Kein Kunde'}
+                    </p>
+                    {/* Mobile: Amount + Date in row */}
+                    <div className="flex items-center justify-between mt-2 sm:hidden">
+                      <span className="text-base font-semibold text-white">
+                        {formatCurrency(total)}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {formatDate(doc.date)}
+                      </span>
+                    </div>
+                    {/* Desktop: Date */}
+                    <p className="text-sm text-gray-500 hidden sm:block">
+                      {formatDate(doc.date)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                  <p className="text-lg font-semibold text-white">
+                {/* Desktop: Amount + Actions */}
+                <div className="hidden sm:flex items-center gap-4">
+                  <p className="text-lg font-semibold text-white whitespace-nowrap">
                     {formatCurrency(total)}
                   </p>
-                  <div className="flex items-center gap-1">
-                    <Link href={`${basePath}/${doc.id}`}>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                    <Link href={`${basePath}/${doc.id}/pdf`}>
-                      <Button variant="ghost" size="sm">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(doc.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
+                  <ActionMenu
+                    docId={doc.id}
+                    basePath={basePath}
+                    onDelete={() => setDeleteDoc(doc)}
+                  />
+                </div>
+
+                {/* Mobile: Action Menu */}
+                <div className="sm:hidden">
+                  <ActionMenu
+                    docId={doc.id}
+                    basePath={basePath}
+                    onDelete={() => setDeleteDoc(doc)}
+                  />
                 </div>
               </div>
             </CardContent>
           </Card>
         );
       })}
+
+      {/* Delete Confirmation Modal */}
+      {deleteDoc && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/50"
+            onClick={() => {
+              if (!isDeleting) {
+                setDeleteDoc(null);
+                setDeleteError(null);
+              }
+            }}
+          />
+          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-6 w-[90%] max-w-md">
+            <h3 className="text-lg font-semibold text-white mb-2">
+              {type === 'invoice' ? 'Rechnung' : 'Angebot'} löschen?
+            </h3>
+            <p className="text-gray-400 text-sm mb-4">
+              Möchtest du {type === 'invoice' ? 'die Rechnung' : 'das Angebot'}{' '}
+              <strong className="text-white">{deleteDoc.number}</strong> wirklich löschen?
+              Diese Aktion kann nicht rückgängig gemacht werden.
+            </p>
+
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-sm">
+                <p className="text-red-300">{deleteError.message}</p>
+                {deleteError.showSettings && (
+                  <Link
+                    href="/settings"
+                    className="mt-2 flex items-center gap-1.5 text-blue-400 hover:text-blue-300"
+                    onClick={() => {
+                      setDeleteDoc(null);
+                      setDeleteError(null);
+                    }}
+                  >
+                    <Settings className="h-4 w-4" />
+                    In den Einstellungen ändern
+                  </Link>
+                )}
+              </div>
+            )}
+
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setDeleteDoc(null);
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-1" />
+                )}
+                Endgültig löschen
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

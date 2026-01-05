@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Header } from '@/components/layout/header';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ export default function SettingsPage() {
     email: '',
     tax_number: '',
     is_kleinunternehmer: false,
+    allow_paid_invoice_deletion: false,
     bank_name: '',
     iban: '',
     bic: '',
@@ -70,10 +71,36 @@ export default function SettingsPage() {
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    // Validierung: Erlaubte Dateitypen
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setLogoError('Nur PNG, JPG, GIF oder WebP erlaubt.');
+      e.target.value = '';
+      return;
     }
+
+    // Validierung: Maximale Dateigröße (2 MB)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setLogoError('Logo darf maximal 2 MB groß sein.');
+      e.target.value = '';
+      return;
+    }
+
+    // Validierung: Dateiendung prüfen
+    const allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    if (!extension || !allowedExtensions.includes(extension)) {
+      setLogoError('Ungültige Dateiendung.');
+      e.target.value = '';
+      return;
+    }
+
+    setLogoError(null);
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
   };
 
   const handleCancelSubscription = async () => {
@@ -158,9 +185,9 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <Header title="Einstellungen" />
+      <PageHeader title="Einstellungen" />
 
-      <div className="p-6 max-w-2xl space-y-6">
+      <div className="p-4 sm:p-6 max-w-2xl space-y-6">
         {/* Subscription Status */}
         <Card>
           <CardHeader>
@@ -186,7 +213,7 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-gray-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-lg text-white">29 €</span>
+                      <span className="font-semibold text-lg text-white">60 €</span>
                       <span className="text-sm text-gray-400">einmalig</span>
                     </div>
                     <p className="text-sm text-gray-400 mb-4">
@@ -198,7 +225,7 @@ export default function SettingsPage() {
                   </div>
                   <div className="border border-gray-700 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-semibold text-lg text-white">5 €</span>
+                      <span className="font-semibold text-lg text-white">10 €</span>
                       <span className="text-sm text-gray-400">/ Monat</span>
                     </div>
                     <p className="text-sm text-gray-400 mb-4">
@@ -263,10 +290,10 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <UpgradeButton plan="lifetime">
-                    Lifetime kaufen (29 €)
+                    Lifetime kaufen (60 €)
                   </UpgradeButton>
                   <UpgradeButton plan="monthly" variant="outline">
-                    Abo erneuern (5 €/Monat)
+                    Abo erneuern (10 €/Monat)
                   </UpgradeButton>
                 </div>
               </div>
@@ -327,18 +354,33 @@ export default function SettingsPage() {
                     </div>
                   )}
                   <div className="flex flex-col gap-1">
-                    <label className="cursor-pointer">
-                      <span className="text-sm text-blue-400 hover:text-blue-300 hover:underline">
-                        {logoPreview ? 'Logo ändern' : 'Logo hochladen'}
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                        className="hidden"
-                        onChange={handleLogoChange}
-                      />
-                    </label>
-                    <span className="text-xs text-gray-500">PNG, JPG oder GIF</span>
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer">
+                        <span className="text-sm text-blue-400 hover:text-blue-300 hover:underline">
+                          {logoPreview ? 'Logo ändern' : 'Logo hochladen'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                          className="hidden"
+                          onChange={handleLogoChange}
+                        />
+                      </label>
+                      {logoPreview && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLogoPreview(null);
+                            setLogoFile(null);
+                            setFormData({ ...formData, logo_url: null });
+                          }}
+                          className="text-sm text-red-400 hover:text-red-300 hover:underline"
+                        >
+                          Entfernen
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">PNG, JPG, GIF oder WebP (max. 2 MB)</span>
                     {logoError && (
                       <span className="text-xs text-red-400">{logoError}</span>
                     )}
@@ -465,6 +507,25 @@ export default function SettingsPage() {
                 value={formData.bic || ''}
                 onChange={(e) =>
                   setFormData({ ...formData, bic: e.target.value })
+                }
+              />
+            </CardContent>
+          </Card>
+
+          {/* Erweiterte Einstellungen */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Erweiterte Einstellungen</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Toggle
+                label="Bezahlte Rechnungen löschen erlauben"
+                description={formData.allow_paid_invoice_deletion
+                  ? "Achtung: Bezahlte Rechnungen können gelöscht werden. Dies kann buchhalterische Probleme verursachen."
+                  : "Bezahlte Rechnungen sind vor versehentlichem Löschen geschützt."}
+                checked={formData.allow_paid_invoice_deletion || false}
+                onChange={(checked) =>
+                  setFormData({ ...formData, allow_paid_invoice_deletion: checked })
                 }
               />
             </CardContent>

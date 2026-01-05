@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/header';
+import { PageHeader } from '@/components/layout/page-header';
 import { DocumentForm } from '@/components/documents/document-form';
 import { redirect } from 'next/navigation';
 
@@ -34,8 +34,8 @@ export default async function NewQuotePage() {
 
   return (
     <div>
-      <Header title="Neues Angebot" />
-      <div className="p-6 max-w-3xl">
+      <PageHeader title="Neues Angebot" />
+      <div className="p-4 sm:p-6 max-w-3xl">
         <DocumentForm
           type="quote"
           customers={customers || []}

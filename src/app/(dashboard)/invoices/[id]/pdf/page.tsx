@@ -51,6 +51,12 @@ export default function InvoicePDFPage() {
         return;
       }
 
+      // Use profile snapshot for paid invoices
+      const isPaid = document.status === 'paid';
+      const effectiveProfile = isPaid && document.profile_snapshot
+        ? document.profile_snapshot
+        : profile;
+
       setDocumentNumber(document.number);
       setCustomerName(document.customer?.name || '');
 
@@ -58,7 +64,7 @@ export default function InvoicePDFPage() {
         <InvoicePDF
           document={document}
           lineItems={document.line_items || []}
-          profile={profile}
+          profile={effectiveProfile}
           customer={document.customer}
         />
       ).toBlob();

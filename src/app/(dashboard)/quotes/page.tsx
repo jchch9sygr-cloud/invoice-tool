@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/header';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, FileCheck } from 'lucide-react';
@@ -19,16 +19,16 @@ export default async function QuotesPage() {
 
   return (
     <div>
-      <Header title="Angebote">
+      <PageHeader title="Angebote">
         <Link href="/quotes/new">
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            Neues Angebot
+          <Button size="sm" className="px-3 sm:px-4">
+            <Plus className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Neues Angebot</span>
           </Button>
         </Link>
-      </Header>
+      </PageHeader>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {quotes && quotes.length > 0 ? (
           <DocumentList documents={quotes} type="quote" />
         ) : (

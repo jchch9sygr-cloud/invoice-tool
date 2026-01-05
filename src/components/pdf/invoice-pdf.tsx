@@ -114,22 +114,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   colDescription: {
-    width: '45%',
+    width: '75%',
   },
-  colQuantity: {
-    width: '12%',
-    textAlign: 'right',
-  },
-  colUnit: {
-    width: '13%',
-    textAlign: 'center',
-  },
-  colPrice: {
-    width: '15%',
-    textAlign: 'right',
-  },
-  colTotal: {
-    width: '15%',
+  colAmount: {
+    width: '25%',
     textAlign: 'right',
   },
   // Summenblock rechts
@@ -140,7 +128,7 @@ const styles = StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: 180,
+    width: 320,
     paddingVertical: 3,
     paddingHorizontal: 6,
     fontSize: 10,
@@ -148,7 +136,7 @@ const styles = StyleSheet.create({
   totalRowBorder: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: 180,
+    width: 320,
     paddingVertical: 5,
     paddingHorizontal: 6,
     borderTopWidth: 1,
@@ -236,10 +224,22 @@ interface InvoicePDFProps {
 }
 
 export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePDFProps) {
-  const netTotal = calculateTotal(lineItems);
+  // Calculate positions total
+  const positionsTotal = lineItems.reduce(
+    (sum, item) => sum + (item.quantity * item.unit_price),
+    0
+  );
+
+  // Calculate courtage if present
+  const hasCourtage = document.courtage_base_amount != null && document.courtage_percentage != null;
+  const courtageAmount = hasCourtage
+    ? (document.courtage_base_amount! * document.courtage_percentage!) / 100
+    : 0;
+
+  const netTotal = positionsTotal + courtageAmount;
   const vatRate = document.vat_rate || 0;
-  const vatAmount = calculateVat(netTotal, vatRate);
-  const grossTotal = calculateGrossTotal(netTotal, vatRate);
+  const vatAmount = (netTotal * vatRate) / 100;
+  const grossTotal = netTotal + vatAmount;
   const isInvoice = document.type === 'invoice';
 
   return (
@@ -290,28 +290,22 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
 
         {/* Brieftext: Anrede + Einleitung */}
         <View style={styles.bodySection}>
-          <Text style={styles.bodyText}>Sehr geehrte Damen und Herren,</Text>
+          <Text style={styles.bodyText}>{document.salutation || 'Sehr geehrte Damen und Herren,'}</Text>
           {document.introduction_text && (
             <Text style={styles.bodyText}>{document.introduction_text}</Text>
           )}
         </View>
 
-        {/* Positionstabelle */}
+        {/* Positionstabelle - Vereinfacht */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={styles.colDescription}>Beschreibung</Text>
-            <Text style={styles.colQuantity}>Menge</Text>
-            <Text style={styles.colUnit}>Einheit</Text>
-            <Text style={styles.colPrice}>Einzelpreis</Text>
-            <Text style={styles.colTotal}>Gesamt</Text>
+            <Text style={styles.colAmount}>Betrag</Text>
           </View>
           {lineItems.map((item, index) => (
             <View key={index} style={styles.tableRow}>
               <Text style={styles.colDescription}>{item.description}</Text>
-              <Text style={styles.colQuantity}>{item.quantity}</Text>
-              <Text style={styles.colUnit}>{item.unit}</Text>
-              <Text style={styles.colPrice}>{formatCurrency(item.unit_price)}</Text>
-              <Text style={styles.colTotal}>
+              <Text style={styles.colAmount}>
                 {formatCurrency(item.quantity * item.unit_price)}
               </Text>
             </View>
@@ -320,16 +314,31 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
 
         {/* Summenblock rechts */}
         <View style={styles.totalSection}>
+          {/* Nettobetrag (Positionen) */}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Nettobetrag:</Text>
-            <Text style={styles.totalValue}>{formatCurrency(netTotal)}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(positionsTotal)}</Text>
           </View>
+
+          {/* Courtage Zeile */}
+          {hasCourtage && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>
+                Courtage von {document.courtage_percentage}% von {formatCurrency(document.courtage_base_amount!)}:
+              </Text>
+              <Text style={styles.totalValue}>{formatCurrency(courtageAmount)}</Text>
+            </View>
+          )}
+
+          {/* USt. */}
           {vatRate > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>{vatRate}% USt.:</Text>
               <Text style={styles.totalValue}>{formatCurrency(vatAmount)}</Text>
             </View>
           )}
+
+          {/* Gesamtbetrag */}
           <View style={styles.totalRowBorder}>
             <Text style={styles.totalLabelBold}>Gesamtbetrag:</Text>
             <Text style={styles.totalValueBold}>{formatCurrency(grossTotal)}</Text>

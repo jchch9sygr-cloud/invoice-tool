@@ -8,9 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
-import { formatCurrency, generateDocumentNumber, calculateTotal, calculateVat, calculateGrossTotal } from '@/lib/utils';
-import type { Customer, LineItemFormData, DocumentType, Profile } from '@/types/database';
+import { Plus, Trash2, Calculator, X } from 'lucide-react';
+import { formatCurrency, generateDocumentNumber } from '@/lib/utils';
+import type { Customer, DocumentType, Profile } from '@/types/database';
+
+interface LineItemWithId {
+  id: string;
+  description: string;
+  amount: number;
+}
 
 interface DocumentFormProps {
   type: DocumentType;
@@ -35,6 +41,7 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
     date: today,
     due_date: dueDate,
     location: profile?.city || '',
+    salutation: 'Sehr geehrte Damen und Herren,',
     introduction_text: type === 'invoice'
       ? 'gemäß den vereinbarten Vergütungskonditionen erlauben wir uns Ihnen für die erbrachten Leistungen den nachfolgenden Betrag in Rechnung zu stellen:'
       : 'wir freuen uns, Ihnen folgendes Angebot unterbreiten zu können:',
@@ -43,35 +50,47 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
     sender_name: '',
   });
 
-  const [lineItems, setLineItems] = useState<LineItemFormData[]>([
-    { description: '', quantity: 1, unit: 'Stück', unit_price: 0 },
+  const generateItemId = () => Math.random().toString(36).substring(2, 11);
+
+  const [lineItems, setLineItems] = useState<LineItemWithId[]>([
+    { id: generateItemId(), description: '', amount: 0 },
   ]);
+
+  // Courtage State
+  const [courtageEnabled, setCourtageEnabled] = useState(false);
+  const [courtageData, setCourtageData] = useState({
+    baseAmount: 0,
+    percentage: 3.57,
+  });
 
   const addLineItem = () => {
     setLineItems([
       ...lineItems,
-      { description: '', quantity: 1, unit: 'Stück', unit_price: 0 },
+      { id: generateItemId(), description: '', amount: 0 },
     ]);
   };
 
-  const removeLineItem = (index: number) => {
+  const removeLineItem = (itemId: string) => {
     if (lineItems.length === 1) return;
-    setLineItems(lineItems.filter((_, i) => i !== index));
+    setLineItems(lineItems.filter((item) => item.id !== itemId));
   };
 
   const updateLineItem = (
-    index: number,
-    field: keyof LineItemFormData,
+    itemId: string,
+    field: keyof Omit<LineItemWithId, 'id'>,
     value: string | number
   ) => {
-    const updated = [...lineItems];
-    updated[index] = { ...updated[index], [field]: value };
-    setLineItems(updated);
+    setLineItems(lineItems.map((item) =>
+      item.id === itemId ? { ...item, [field]: value } : item
+    ));
   };
 
-  const netTotal = calculateTotal(lineItems);
-  const vatAmount = calculateVat(netTotal, formData.vat_rate);
-  const grossTotal = calculateGrossTotal(netTotal, formData.vat_rate);
+  // Calculations
+  const positionsTotal = lineItems.reduce((sum, item) => sum + (item.amount || 0), 0);
+  const courtageAmount = courtageEnabled ? (courtageData.baseAmount * courtageData.percentage) / 100 : 0;
+  const netTotal = positionsTotal + courtageAmount;
+  const vatAmount = (netTotal * formData.vat_rate) / 100;
+  const grossTotal = netTotal + vatAmount;
 
   const selectedCustomer = customers.find(c => c.id === formData.customer_id);
 
@@ -99,8 +118,11 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
           notes: formData.notes,
           vat_rate: formData.vat_rate,
           location: formData.location || null,
+          salutation: formData.salutation || null,
           introduction_text: formData.introduction_text || null,
           sender_name: formData.sender_name || null,
+          courtage_base_amount: courtageEnabled ? courtageData.baseAmount : null,
+          courtage_percentage: courtageEnabled ? courtageData.percentage : null,
           status: 'draft',
         })
         .select()
@@ -108,15 +130,15 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
 
       if (docError) throw docError;
 
-      // Create line items
+      // Create line items (simplified - no quantity/unit)
       const lineItemsToInsert = lineItems
-        .filter((item) => item.description && item.unit_price > 0)
+        .filter((item) => item.description && item.amount > 0)
         .map((item, index) => ({
           document_id: doc.id,
           description: item.description,
-          quantity: item.quantity,
-          unit: item.unit,
-          unit_price: item.unit_price,
+          quantity: 1,
+          unit: 'pauschal',
+          unit_price: item.amount,
           position: index,
         }));
 
@@ -148,17 +170,17 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
   }));
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       {/* Absender & Empfänger */}
       <Card>
-        <CardHeader>
-          <CardTitle>Absender & Empfänger</CardTitle>
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-base sm:text-lg">Absender & Empfänger</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="px-4 sm:px-6 space-y-4 sm:space-y-6">
           {/* Absender (readonly) */}
           <div>
             <p className="text-xs text-gray-500 uppercase mb-2">Absender</p>
-            <div className="bg-gray-800 p-4 rounded-lg text-gray-200 text-sm">
+            <div className="bg-gray-800 p-3 sm:p-4 rounded-xl text-gray-200 text-sm">
               {profile ? (
                 <>
                   <p className="font-medium text-white">{profile.company_name || 'Firma nicht hinterlegt'}</p>
@@ -184,7 +206,7 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
               }
             />
             {selectedCustomer && (
-              <div className="mt-2 bg-gray-800 p-4 rounded-lg text-gray-200 text-sm">
+              <div className="mt-2 bg-gray-800 p-3 sm:p-4 rounded-xl text-gray-200 text-sm">
                 <p className="font-medium text-white">{selectedCustomer.name}</p>
                 {selectedCustomer.company && <p>{selectedCustomer.company}</p>}
                 <p>{selectedCustomer.address}</p>
@@ -197,11 +219,11 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
 
       {/* Ort & Datum */}
       <Card>
-        <CardHeader>
-          <CardTitle>Ort & Datum</CardTitle>
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-base sm:text-lg">Ort & Datum</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+        <CardContent className="px-4 sm:px-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Input
               id="location"
               label="Ort"
@@ -235,15 +257,19 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
 
       {/* Einleitungstext */}
       <Card>
-        <CardHeader>
-          <CardTitle>Anrede & Einleitung</CardTitle>
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-base sm:text-lg">Anrede & Einleitung</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-gray-300 text-sm">
-            <p className="mb-2">
-              Sehr geehrte{selectedCustomer ? ` Damen und Herren` : ' Damen und Herren'},
-            </p>
-          </div>
+        <CardContent className="px-4 sm:px-6 space-y-4">
+          <Input
+            id="salutation"
+            label="Anrede"
+            placeholder="z.B. Sehr geehrte Frau Müller,"
+            value={formData.salutation}
+            onChange={(e) =>
+              setFormData({ ...formData, salutation: e.target.value })
+            }
+          />
           <Textarea
             id="introduction_text"
             rows={3}
@@ -256,78 +282,96 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
         </CardContent>
       </Card>
 
-      {/* Positionen */}
+      {/* Positionen - Vereinfacht */}
       <Card>
-        <CardHeader>
-          <CardTitle>Positionen</CardTitle>
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-base sm:text-lg">Positionen</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <div className="space-y-4">
-            {/* Header */}
-            <div className="hidden md:grid grid-cols-12 gap-2 text-sm font-medium text-gray-400">
-              <div className="col-span-5">Beschreibung</div>
-              <div className="col-span-2">Menge</div>
-              <div className="col-span-2">Einheit</div>
-              <div className="col-span-2">Preis (€)</div>
+            {/* Desktop Header */}
+            <div className="hidden sm:grid grid-cols-12 gap-2 text-sm font-medium text-gray-400">
+              <div className="col-span-8">Beschreibung</div>
+              <div className="col-span-3 text-right">Betrag</div>
               <div className="col-span-1"></div>
             </div>
 
             {/* Items */}
             {lineItems.map((item, index) => (
-              <div key={index} className="grid grid-cols-12 gap-2 items-start">
-                <div className="col-span-12 md:col-span-5">
+              <div key={item.id} className="space-y-3 sm:space-y-0">
+                {/* Mobile: Card-style layout */}
+                <div className="sm:hidden bg-gray-800/50 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-400 uppercase">Position {index + 1}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeLineItem(item.id)}
+                      disabled={lineItems.length === 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400" />
+                    </Button>
+                  </div>
                   <Input
-                    placeholder="z.B. Beratungsleistung, Courtage, etc."
+                    placeholder="Beschreibung"
                     value={item.description}
                     onChange={(e) =>
-                      updateLineItem(index, 'description', e.target.value)
+                      updateLineItem(item.id, 'description', e.target.value)
                     }
                   />
-                </div>
-                <div className="col-span-4 md:col-span-2">
-                  <Input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={item.quantity}
-                    onChange={(e) =>
-                      updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)
-                    }
-                  />
-                </div>
-                <div className="col-span-4 md:col-span-2">
-                  <Input
-                    placeholder="Stück"
-                    value={item.unit}
-                    onChange={(e) => updateLineItem(index, 'unit', e.target.value)}
-                  />
-                </div>
-                <div className="col-span-3 md:col-span-2">
                   <Input
                     type="number"
                     min="0"
                     step="0.01"
-                    value={item.unit_price}
+                    placeholder="Betrag in €"
+                    value={item.amount || ''}
                     onChange={(e) =>
-                      updateLineItem(index, 'unit_price', parseFloat(e.target.value) || 0)
+                      updateLineItem(item.id, 'amount', parseFloat(e.target.value) || 0)
                     }
                   />
                 </div>
-                <div className="col-span-1 flex justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeLineItem(index)}
-                    disabled={lineItems.length === 1}
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-400" />
-                  </Button>
+
+                {/* Desktop: Grid layout */}
+                <div className="hidden sm:grid grid-cols-12 gap-2 items-start">
+                  <div className="col-span-8">
+                    <Input
+                      placeholder="z.B. Beratungsleistung, Vermittlung, etc."
+                      value={item.description}
+                      onChange={(e) =>
+                        updateLineItem(item.id, 'description', e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0,00"
+                      value={item.amount || ''}
+                      onChange={(e) =>
+                        updateLineItem(item.id, 'amount', parseFloat(e.target.value) || 0)
+                      }
+                    />
+                  </div>
+                  <div className="col-span-1 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeLineItem(item.id)}
+                      disabled={lineItems.length === 1}
+                    >
+                      <Trash2 className="h-4 w-4 text-gray-400" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
 
-            <Button type="button" variant="outline" onClick={addLineItem}>
+            <Button type="button" variant="outline" onClick={addLineItem} className="w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-1" />
               Position hinzufügen
             </Button>
@@ -335,14 +379,69 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
         </CardContent>
       </Card>
 
-      {/* Umsatzsteuer & Summen */}
+      {/* Courtage & Summen */}
       <Card>
-        <CardHeader>
-          <CardTitle>Umsatzsteuer & Summen</CardTitle>
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-base sm:text-lg">Courtage & Summen</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* USt. frei eingebbar */}
-          <div className="max-w-xs">
+        <CardContent className="px-4 sm:px-6 space-y-4">
+          {/* Courtage Toggle */}
+          {!courtageEnabled ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCourtageEnabled(true)}
+              className="w-full sm:w-auto"
+            >
+              <Calculator className="h-4 w-4 mr-1" />
+              Courtage hinzufügen
+            </Button>
+          ) : (
+            <div className="p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-gray-300">Courtage berechnen</h4>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setCourtageEnabled(false);
+                    setCourtageData({ baseAmount: 0, percentage: 3.57 });
+                  }}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4 text-gray-400" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  label="Basisbetrag (€)"
+                  placeholder="z.B. 300000"
+                  value={courtageData.baseAmount || ''}
+                  onChange={(e) =>
+                    setCourtageData({ ...courtageData, baseAmount: parseFloat(e.target.value) || 0 })
+                  }
+                />
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  label="Prozentsatz (%)"
+                  value={courtageData.percentage}
+                  onChange={(e) =>
+                    setCourtageData({ ...courtageData, percentage: parseFloat(e.target.value) || 0 })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {/* USt. Rate */}
+          <div className="max-w-[200px]">
             <Input
               id="vat_rate"
               type="number"
@@ -359,20 +458,43 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
 
           {/* Summen */}
           <div className="flex justify-end pt-4 border-t border-gray-700">
-            <div className="text-right space-y-2 min-w-[250px]">
-              <div className="flex justify-between gap-8">
-                <p className="text-sm text-gray-400">Nettobetrag</p>
-                <p className="text-sm text-white">{formatCurrency(netTotal)}</p>
+            <div className="w-full sm:w-auto sm:min-w-[350px] space-y-2">
+              {/* Positionen Summe */}
+              <div className="flex justify-between gap-4">
+                <p className="text-sm text-gray-400">Nettobetrag (Positionen)</p>
+                <p className="text-sm text-white">{formatCurrency(positionsTotal)}</p>
               </div>
+
+              {/* Courtage Zeile */}
+              {courtageEnabled && courtageAmount > 0 && (
+                <div className="flex justify-between gap-4">
+                  <p className="text-sm text-gray-400">
+                    Courtage von {courtageData.percentage}% von {formatCurrency(courtageData.baseAmount)}
+                  </p>
+                  <p className="text-sm text-white">{formatCurrency(courtageAmount)}</p>
+                </div>
+              )}
+
+              {/* Netto Gesamt (wenn Courtage aktiv) */}
+              {courtageEnabled && courtageAmount > 0 && (
+                <div className="flex justify-between gap-4 pt-1 border-t border-gray-600">
+                  <p className="text-sm text-gray-400">Nettobetrag gesamt</p>
+                  <p className="text-sm text-white">{formatCurrency(netTotal)}</p>
+                </div>
+              )}
+
+              {/* USt. */}
               {formData.vat_rate > 0 && (
-                <div className="flex justify-between gap-8">
+                <div className="flex justify-between gap-4">
                   <p className="text-sm text-gray-400">{formData.vat_rate}% USt.</p>
                   <p className="text-sm text-white">{formatCurrency(vatAmount)}</p>
                 </div>
               )}
-              <div className="flex justify-between gap-8 pt-2 border-t border-gray-600">
+
+              {/* Gesamtbetrag */}
+              <div className="flex justify-between gap-4 pt-2 border-t border-gray-600">
                 <p className="text-sm font-medium text-gray-200">Gesamtbetrag</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(grossTotal)}</p>
+                <p className="text-lg sm:text-xl font-bold text-white">{formatCurrency(grossTotal)}</p>
               </div>
             </div>
           </div>
@@ -381,10 +503,10 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
 
       {/* Schlusstext & Anmerkungen */}
       <Card>
-        <CardHeader>
-          <CardTitle>Schlusstext & Absender</CardTitle>
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-base sm:text-lg">Schlusstext & Absender</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="px-4 sm:px-6 space-y-4">
           <Textarea
             id="notes"
             rows={2}
@@ -414,16 +536,16 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
 
       {/* Actions */}
       {error && (
-        <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
+        <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-xl">
           <p className="font-medium">Fehler:</p>
           <p className="text-sm">{error}</p>
         </div>
       )}
-      <div className="flex gap-3">
-        <Button type="submit" loading={loading}>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Button type="submit" loading={loading} className="w-full sm:w-auto order-1">
           {type === 'invoice' ? 'Rechnung erstellen' : 'Angebot erstellen'}
         </Button>
-        <Button type="button" variant="outline" onClick={() => router.back()}>
+        <Button type="button" variant="outline" onClick={() => router.back()} className="w-full sm:w-auto order-2">
           Abbrechen
         </Button>
       </div>

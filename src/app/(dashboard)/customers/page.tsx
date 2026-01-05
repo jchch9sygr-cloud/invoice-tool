@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/header';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Users } from 'lucide-react';
@@ -18,16 +18,16 @@ export default async function CustomersPage() {
 
   return (
     <div>
-      <Header title="Kunden">
+      <PageHeader title="Kunden">
         <Link href="/customers/new">
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            Neuer Kunde
+          <Button size="sm" className="px-3 sm:px-4">
+            <Plus className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Neuer Kunde</span>
           </Button>
         </Link>
-      </Header>
+      </PageHeader>
 
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {customers && customers.length > 0 ? (
           <CustomerList customers={customers} />
         ) : (

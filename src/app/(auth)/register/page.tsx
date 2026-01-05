@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { registerSchema } from '@/lib/validations';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -22,13 +23,10 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    if (password !== passwordConfirm) {
-      setError('Passwörter stimmen nicht überein.');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Passwort muss mindestens 6 Zeichen lang sein.');
+    // Zod-Validierung
+    const validation = registerSchema.safeParse({ email, password, passwordConfirm });
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message || 'Validierungsfehler');
       return;
     }
 
@@ -120,7 +118,7 @@ export default function RegisterPage() {
             id="password"
             type="password"
             label="Passwort"
-            placeholder="Mindestens 6 Zeichen"
+            placeholder="Mind. 12 Zeichen, Groß-/Kleinbuchstaben, Zahl"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

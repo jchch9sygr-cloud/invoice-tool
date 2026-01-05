@@ -1,12 +1,12 @@
 export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
-import { Header } from '@/components/layout/header';
+import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, FileCheck, Users, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -42,46 +42,46 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <Header title="Dashboard">
+      <PageHeader title="Dashboard">
         <div className="flex gap-2">
           <Link href="/invoices/new">
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Neue Rechnung
+            <Button size="sm" className="px-3 sm:px-4">
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Rechnung</span>
             </Button>
           </Link>
           <Link href="/quotes/new">
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-1" />
-              Neues Angebot
+            <Button size="sm" variant="outline" className="px-3 sm:px-4">
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Angebot</span>
             </Button>
           </Link>
         </div>
-      </Header>
+      </PageHeader>
 
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Free tier notice */}
         {freeDocsRemaining !== null && (
-          <div className="rounded-lg bg-blue-900/30 border border-blue-800 p-4">
+          <div className="rounded-xl bg-blue-900/30 border border-blue-800 p-3 sm:p-4">
             <p className="text-sm text-blue-300">
-              <strong>Kostenloser Tarif:</strong> Du hast noch {freeDocsRemaining} von 3 kostenlosen Rechnungen/Angeboten.{' '}
-              <Link href="/settings" className="underline text-blue-400">Jetzt upgraden</Link>
+              <strong>Kostenloser Tarif:</strong> Noch {freeDocsRemaining} von 3 Dokumenten.{' '}
+              <Link href="/settings" className="underline text-blue-400">Upgraden</Link>
             </p>
           </div>
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {stats.map((stat) => (
             <Link key={stat.name} href={stat.href}>
-              <Card className="hover:border-blue-600 transition-colors cursor-pointer">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">{stat.name}</p>
-                      <p className="text-3xl font-bold text-white">{stat.value}</p>
+              <Card className="hover:border-blue-600/50 transition-colors cursor-pointer h-full">
+                <CardContent className="p-3 sm:pt-6 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-center sm:text-left">
+                      <p className="text-xs sm:text-sm text-gray-400">{stat.name}</p>
+                      <p className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</p>
                     </div>
-                    <stat.icon className="h-10 w-10 text-gray-600" />
+                    <stat.icon className="hidden sm:block h-10 w-10 text-gray-600" />
                   </div>
                 </CardContent>
               </Card>
@@ -91,33 +91,33 @@ export default async function DashboardPage() {
 
         {/* Recent Documents */}
         <Card>
-          <CardHeader>
-            <CardTitle>Letzte Dokumente</CardTitle>
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle className="text-base sm:text-lg">Letzte Dokumente</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6">
             {recentDocuments && recentDocuments.length > 0 ? (
-              <div className="divide-y divide-gray-800">
+              <div className="divide-y divide-gray-800 -mx-4 sm:-mx-6">
                 {recentDocuments.map((doc) => (
                   <Link
                     key={doc.id}
                     href={`/${doc.type === 'invoice' ? 'invoices' : 'quotes'}/${doc.id}`}
-                    className="flex items-center justify-between py-3 hover:bg-gray-800 -mx-4 px-4 rounded-lg transition-colors"
+                    className="flex items-center justify-between py-3 px-4 sm:px-6 hover:bg-gray-800/50 transition-colors active:bg-gray-800"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       {doc.type === 'invoice' ? (
-                        <FileText className="h-5 w-5 text-blue-500" />
+                        <FileText className="h-5 w-5 text-blue-500 shrink-0" />
                       ) : (
-                        <FileCheck className="h-5 w-5 text-green-500" />
+                        <FileCheck className="h-5 w-5 text-green-500 shrink-0" />
                       )}
-                      <div>
-                        <p className="font-medium text-white">{doc.number}</p>
-                        <p className="text-sm text-gray-400">
+                      <div className="min-w-0">
+                        <p className="font-medium text-white text-sm sm:text-base truncate">{doc.number}</p>
+                        <p className="text-sm text-gray-400 truncate">
                           {doc.customer?.name || 'Kein Kunde'}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-400">{formatDate(doc.date)}</p>
+                    <div className="text-right shrink-0 ml-2">
+                      <p className="text-xs sm:text-sm text-gray-500">{formatDate(doc.date)}</p>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                           doc.status === 'paid'
@@ -135,7 +135,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-400">Noch keine Dokumente erstellt.</p>
+                <p className="text-gray-400 text-sm sm:text-base">Noch keine Dokumente erstellt.</p>
                 <Link href="/invoices/new">
                   <Button variant="outline" className="mt-4">
                     Erste Rechnung erstellen

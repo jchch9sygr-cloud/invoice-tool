@@ -43,12 +43,12 @@ export default function LandingPage() {
             <span className="text-gray-500">oder</span>
             <Link href="#pricing">
               <Button variant="outline" size="lg" className="text-lg px-8">
-                29 € Lifetime kaufen
+                60 € Lifetime kaufen
               </Button>
             </Link>
           </div>
           <p className="mt-4 text-sm text-gray-500">
-            3 Dokumente gratis. Danach 29 € einmalig oder 5 €/Monat.
+            3 Dokumente gratis. Danach 60 € einmalig oder 10 €/Monat.
           </p>
         </div>
       </section>
@@ -143,7 +143,7 @@ export default function LandingPage() {
               </div>
               <h3 className="text-xl font-bold text-white mb-2">Lifetime</h3>
               <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-4xl font-bold text-white">29 €</span>
+                <span className="text-4xl font-bold text-white">60 €</span>
               </div>
               <ul className="space-y-3 mb-8">
                 {[
@@ -168,7 +168,7 @@ export default function LandingPage() {
             <div className="border border-gray-700 rounded-2xl p-8 bg-gray-900">
               <h3 className="text-xl font-bold text-white mb-2">Monatlich</h3>
               <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-4xl font-bold text-white">5 €</span>
+                <span className="text-4xl font-bold text-white">10 €</span>
                 <span className="text-gray-400">/ Monat</span>
               </div>
               <ul className="space-y-3 mb-8">
@@ -268,7 +268,7 @@ export default function LandingPage() {
               },
               {
                 q: 'Was kostet das?',
-                a: '3 Dokumente gratis. Danach 29 € einmalig oder 5 €/Monat.',
+                a: '3 Dokumente gratis. Danach 60 € einmalig oder 10 €/Monat.',
               },
               {
                 q: 'Und wenn ich kündige?',
@@ -298,12 +298,30 @@ export default function LandingPage() {
             </Link>
             <Link href="#pricing">
               <Button variant="outline" size="lg" className="text-lg px-8">
-                29 € Lifetime
+                60 € Lifetime
               </Button>
             </Link>
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-8 px-4 border-t border-gray-800">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-gray-500">
+            <Zap className="h-4 w-4" />
+            <span className="text-sm">RechnungsBlitz</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-gray-500">
+            <Link href="/impressum" className="hover:text-gray-300 transition-colors">
+              Impressum
+            </Link>
+            <Link href="/datenschutz" className="hover:text-gray-300 transition-colors">
+              Datenschutz
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

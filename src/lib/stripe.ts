@@ -13,13 +13,13 @@ export const PLANS = {
   lifetime: {
     priceId: process.env.STRIPE_PRICE_LIFETIME!,
     name: 'Einmalzahlung',
-    price: 29,
+    price: 60,
     mode: 'payment' as const,
   },
   monthly: {
     priceId: process.env.STRIPE_PRICE_MONTHLY!,
     name: 'Monatlich',
-    price: 5,
+    price: 10,
     mode: 'subscription' as const,
   },
 };
