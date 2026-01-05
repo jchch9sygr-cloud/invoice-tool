@@ -149,12 +149,9 @@ export default function SettingsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setSubscription((prev) => prev ? {
-          ...prev,
-          cancel_at_period_end: true,
-          current_period_end: data.period_end,
-        } : null);
         alert('Dein Abo wurde gekündigt. Du behältst den Zugang bis zum Ende der Laufzeit.');
+        // Seite neu laden um aktuelle Daten anzuzeigen
+        window.location.reload();
       } else {
         console.error('Cancel error:', data);
         alert('Fehler beim Kündigen: ' + data.error + (data.debug ? '\n\nDebug: ' + JSON.stringify(data.debug) : ''));
