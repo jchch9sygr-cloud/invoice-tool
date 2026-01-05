@@ -78,5 +78,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Prevent browser caching of HTML pages
+  supabaseResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  supabaseResponse.headers.set('Pragma', 'no-cache');
+  supabaseResponse.headers.set('Expires', '0');
+
   return supabaseResponse;
 }
