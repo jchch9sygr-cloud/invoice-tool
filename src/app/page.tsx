@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import {
   Zap, Check, ArrowRight, FileText, Users, Download, Clock, Shield,
-  Sparkles, Menu, X, FileDown, Edit3, Search, CreditCard
+  Sparkles, Menu, X, FileDown, Edit3, Search, CreditCard, AlertTriangle,
+  RefreshCw, PenLine
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -199,21 +200,30 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
             {[
-              { icon: FileText, title: 'Rechnungen & Angebote', desc: 'Professionelle Dokumente mit deinem Branding' },
-              { icon: FileDown, title: 'PDF & Word Export', desc: 'Herunterladen oder bearbeiten – du entscheidest' },
+              { icon: FileText, title: 'Rechnungen & Angebote', desc: 'Professionelle Dokumente im DIN 5008 Format' },
+              { icon: AlertTriangle, title: 'Mahnwesen', desc: '3 Mahnstufen mit automatischen Texten', highlight: true },
+              { icon: FileDown, title: 'PDF & Word Export', desc: 'Alle Dokumente als PDF oder Word' },
+              { icon: PenLine, title: 'Dokumente bearbeiten', desc: 'Fehler korrigieren, solange nicht bezahlt' },
+              { icon: RefreshCw, title: 'Angebot → Rechnung', desc: 'Mit einem Klick umwandeln' },
               { icon: Users, title: 'Kundenverwaltung', desc: 'Einmal anlegen, immer wieder nutzen' },
               { icon: Search, title: 'Globale Suche', desc: 'Finde alles sofort mit ⌘K' },
+              { icon: Edit3, title: 'Logo & Unterschrift', desc: 'Hochladen, Größe anpassen – fertig' },
               { icon: Clock, title: 'Kleinunternehmer §19', desc: 'Ein Klick aktiviert den Hinweis' },
+              { icon: CreditCard, title: 'Bezahlt-Status', desc: 'Markieren und Dokument wird gesperrt' },
               { icon: Shield, title: 'GoBD-konform', desc: 'Alle Pflichtangaben automatisch' },
-              { icon: Edit3, title: 'Logo & Unterschrift', desc: 'Optional hochladen, Größe anpassbar' },
-              { icon: CreditCard, title: 'Bezahlt-Status', desc: 'Markieren und wieder aufheben' },
               { icon: Zap, title: 'Blitzschnell', desc: 'Keine Wartezeiten, keine Ladebalken' },
             ].map((feature, i) => (
               <div
                 key={i}
-                className="p-4 sm:p-5 md:p-6 bg-gray-800/30 border border-gray-800 rounded-xl hover:border-gray-700 hover:bg-gray-800/50 transition-all duration-200"
+                className={`p-4 sm:p-5 md:p-6 border rounded-xl hover:border-gray-700 transition-all duration-200 ${
+                  feature.highlight
+                    ? 'bg-orange-500/10 border-orange-500/30 hover:bg-orange-500/15'
+                    : 'bg-gray-800/30 border-gray-800 hover:bg-gray-800/50'
+                }`}
               >
-                <feature.icon className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-blue-400 mb-3 sm:mb-4" />
+                <feature.icon className={`h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 mb-3 sm:mb-4 ${
+                  feature.highlight ? 'text-orange-400' : 'text-blue-400'
+                }`} />
                 <h3 className="font-semibold text-white text-sm sm:text-base mb-1 sm:mb-2">{feature.title}</h3>
                 <p className="text-gray-400 text-xs sm:text-sm leading-relaxed">{feature.desc}</p>
               </div>
@@ -269,7 +279,7 @@ export default function LandingPage() {
               </div>
               <p className="text-xs sm:text-sm text-green-400 mb-4 sm:mb-6">Nur 2,50 € pro Monat</p>
               <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                {['Unbegrenzte Dokumente', 'Alle Features', 'E-Mail-Versand', 'Jährlich kündbar'].map((item, i) => (
+                {['Unbegrenzte Dokumente', 'Mahnwesen inkl.', 'PDF & Word Export', 'Jährlich kündbar'].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm sm:text-base text-gray-300">
                     <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-400 shrink-0" />
                     <span>{item}</span>
@@ -291,7 +301,7 @@ export default function LandingPage() {
                 <span className="text-sm sm:text-base text-gray-400">/ Monat</span>
               </div>
               <ul className="space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                {['Unbegrenzte Dokumente', 'Alle Features', 'Monatlich kündbar'].map((item, i) => (
+                {['Unbegrenzte Dokumente', 'Mahnwesen inkl.', 'Monatlich kündbar'].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm sm:text-base text-gray-400">
                     <Check className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 shrink-0" />
                     <span>{item}</span>
@@ -344,12 +354,20 @@ export default function LandingPage() {
           <div className="space-y-3 sm:space-y-4">
             {[
               {
-                q: 'Brauche ich ein Logo?',
-                a: 'Nein. Du kannst ein Logo hochladen, es ist aber komplett optional. Deine Rechnungen sehen auch ohne Logo professionell aus.',
+                q: 'Wie funktioniert das Mahnwesen?',
+                a: 'Überfällige Rechnungen werden automatisch angezeigt. Du wählst eine aus, passt optional den Text an, und lädst die Mahnung als PDF oder Word herunter. Es gibt 3 Stufen: Zahlungserinnerung, 2. Mahnung und Letzte Mahnung.',
               },
               {
-                q: 'Kann ich Rechnungen bearbeiten?',
-                a: 'Mit dem Word-Export kannst du jede Rechnung herunterladen und in Word, LibreOffice oder Google Docs bearbeiten.',
+                q: 'Kann ich Rechnungen nachträglich bearbeiten?',
+                a: 'Ja! Solange eine Rechnung nicht als "bezahlt" markiert ist, kannst du sie jederzeit bearbeiten. Bezahlte Rechnungen werden automatisch gesperrt.',
+              },
+              {
+                q: 'Kann ich ein Angebot in eine Rechnung umwandeln?',
+                a: 'Ja, mit einem Klick. Alle Daten werden übernommen – Kunde, Positionen, Beträge. Du musst nichts neu eingeben.',
+              },
+              {
+                q: 'Brauche ich ein Logo oder Unterschrift?',
+                a: 'Nein, beides ist optional. Du kannst Logo und Unterschrift hochladen und die Größe anpassen. Ohne sehen deine Dokumente trotzdem professionell aus.',
               },
               {
                 q: 'Bin ich Kleinunternehmer – was muss ich tun?',
@@ -357,11 +375,11 @@ export default function LandingPage() {
               },
               {
                 q: 'Kann ich kündigen?',
-                a: 'Jederzeit. Beim Monatsabo hast du Zugang bis zum Monatsende, beim Jahresabo bis zum Jahresende. Kein Stress.',
+                a: 'Jederzeit mit einem Klick in den Einstellungen. Beim Monatsabo hast du Zugang bis zum Monatsende, beim Jahresabo bis zum Jahresende.',
               },
               {
                 q: 'Sind die Rechnungen rechtsgültig?',
-                a: 'Ja. Alle PDFs enthalten die gesetzlich vorgeschriebenen Pflichtangaben und sind GoBD-konform.',
+                a: 'Ja. Alle Dokumente folgen dem DIN 5008 Briefstandard, enthalten alle Pflichtangaben und sind GoBD-konform.',
               },
             ].map((faq, i) => (
               <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-gray-700 transition-colors">
