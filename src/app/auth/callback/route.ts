@@ -24,14 +24,22 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      // Bei E-Mail-Bestätigung: Zur Login-Seite mit Erfolgsmeldung
-      if (type === 'signup' || type === 'email') {
+    if (!error && data?.user) {
+      // Bei E-Mail-Bestätigung (type=signup, type=email, oder frisch bestätigter User)
+      // Zur Login-Seite mit Erfolgsmeldung redirecten
+      const isEmailConfirmation = type === 'signup' || type === 'email' || type === 'email_change';
+
+      // Auch wenn kein type, aber User ist neu bestätigt (email_confirmed_at kurz vor jetzt)
+      const emailConfirmedAt = data.user.email_confirmed_at ? new Date(data.user.email_confirmed_at) : null;
+      const isRecentlyConfirmed = emailConfirmedAt && (Date.now() - emailConfirmedAt.getTime()) < 60000; // 1 Minute
+
+      if (isEmailConfirmation || isRecentlyConfirmed) {
         await supabase.auth.signOut();
         return NextResponse.redirect(`${origin}/login?verified=true`);
       }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

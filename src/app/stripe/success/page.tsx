@@ -34,10 +34,10 @@ function StripeSuccessContent() {
         if (data.success) {
           setStatus('success');
 
-          // If logged in, redirect to dashboard after short delay
+          // If logged in, redirect to settings after short delay to see updated subscription
           if (user) {
             setTimeout(() => {
-              router.push('/dashboard?success=true');
+              router.push('/settings?success=true');
             }, 2000);
           }
         } else {
@@ -48,7 +48,7 @@ function StripeSuccessContent() {
         setStatus('success');
         if (user) {
           setTimeout(() => {
-            router.push('/dashboard?success=true');
+            router.push('/settings?success=true');
           }, 2000);
         }
       }
@@ -101,8 +101,8 @@ function StripeSuccessContent() {
         {isLoggedIn ? (
           <div className="space-y-3">
             <p className="text-sm text-gray-500">Du wirst gleich weitergeleitet...</p>
-            <Link href="/dashboard">
-              <Button className="w-full">Zum Dashboard</Button>
+            <Link href="/settings">
+              <Button className="w-full">Zu den Einstellungen</Button>
             </Link>
           </div>
         ) : (

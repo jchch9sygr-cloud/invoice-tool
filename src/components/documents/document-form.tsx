@@ -502,7 +502,7 @@ export function DocumentForm({ type, customers, profile, documentCount }: Docume
       </Card>
 
       {/* Schlusstext & Anmerkungen */}
-      <Card>
+      <Card className="mt-6">
         <CardHeader className="px-4 sm:px-6">
           <CardTitle className="text-base sm:text-lg">Schlusstext & Absender</CardTitle>
         </CardHeader>
