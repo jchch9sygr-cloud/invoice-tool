@@ -14,12 +14,13 @@ import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@
 // Base font size - will be adjusted if content is too long
 const BASE_FONT_SIZE = 10;
 
+// DIN 5008 Briefstandard - konsistent mit invoice-pdf.tsx
 const createStyles = (fontSize: number) => StyleSheet.create({
   page: {
-    paddingTop: 18 * 2.835,
-    paddingBottom: 18 * 2.835,
-    paddingLeft: 25 * 2.835,
-    paddingRight: 20 * 2.835,
+    paddingTop: 20 * 2.835,      // 20mm (DIN 5008)
+    paddingBottom: 20 * 2.835,   // 20mm
+    paddingLeft: 25 * 2.835,     // 25mm (DIN 5008)
+    paddingRight: 20 * 2.835,    // 20mm (DIN 5008)
     fontSize: fontSize,
     fontFamily: 'Helvetica',
     color: '#1f2937',
@@ -27,10 +28,14 @@ const createStyles = (fontSize: number) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8 * 2.835,
+    marginBottom: 10 * 2.835,    // 10mm (wie Rechnung)
   },
   logo: {
     objectFit: 'contain',
+  },
+  signature: {
+    objectFit: 'contain',
+    marginBottom: 2 * 2.835,
   },
   companyInfo: {
     textAlign: 'right',
@@ -42,23 +47,23 @@ const createStyles = (fontSize: number) => StyleSheet.create({
     marginBottom: 2,
   },
   recipientBox: {
-    width: 85 * 2.835,
-    minHeight: 22 * 2.835,
-    marginBottom: 3 * 2.835,
+    width: 85 * 2.835,           // 85mm (DIN 5008)
+    minHeight: 27.3 * 2.835,     // Mindesthöhe (wie Rechnung)
+    marginBottom: 4 * 2.835,     // 4mm
   },
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 6 * 2.835,
+    marginBottom: 8.46 * 2.835,  // 2 Leerzeilen (wie Rechnung)
   },
   subject: {
-    fontSize: fontSize * 1.2,
+    fontSize: fontSize * 1.1,
     fontWeight: 700,
-    marginBottom: 6 * 2.835,
+    marginBottom: 8.46 * 2.835,  // 2 Leerzeilen (wie Rechnung)
   },
   warningBanner: {
     backgroundColor: '#fef3c7',
     padding: 8,
-    marginBottom: 12,
+    marginBottom: 4.23 * 2.835,  // 1 Leerzeile
     borderRadius: 3,
   },
   warningText: {
@@ -68,12 +73,12 @@ const createStyles = (fontSize: number) => StyleSheet.create({
     fontWeight: 700,
   },
   bodySection: {
-    marginBottom: 3 * 2.835,
+    marginBottom: 4.23 * 2.835,  // 1 Leerzeile (wie Rechnung)
   },
   bodyText: {
     fontSize: fontSize,
-    lineHeight: 1.4,
-    marginBottom: 6,
+    lineHeight: 1.5,             // DIN 5008 Zeilenabstand
+    marginBottom: 2,
   },
   text: {
     fontSize: fontSize,
@@ -89,8 +94,8 @@ const createStyles = (fontSize: number) => StyleSheet.create({
     marginBottom: 1,
   },
   invoiceDetails: {
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 4.23 * 2.835,
+    marginBottom: 4.23 * 2.835,
     padding: 10,
     backgroundColor: '#f3f4f6',
     borderRadius: 3,
@@ -126,31 +131,36 @@ const createStyles = (fontSize: number) => StyleSheet.create({
     color: '#dc2626',
   },
   bankSection: {
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 4.23 * 2.835,
+    marginBottom: 4.23 * 2.835,
   },
+  // Grußformel (DIN 5008: konsistent mit Rechnung)
   closingSection: {
-    marginTop: 12,
+    marginTop: 8.46 * 2.835,     // 2 Leerzeilen (wie Rechnung)
+    alignItems: 'flex-start',
   },
   closingText: {
     fontSize: fontSize,
-    marginBottom: 6,
+    marginBottom: 4.23 * 2.835,  // 1 Leerzeile
+  },
+  greeting: {
+    fontSize: fontSize,
+    marginBottom: 3 * 2.835,     // Weniger Abstand wenn Unterschrift folgt
   },
   signatureName: {
     fontSize: fontSize,
     fontWeight: 700,
-    marginTop: 20,
   },
   footer: {
     position: 'absolute',
-    bottom: 12 * 2.835,
+    bottom: 15 * 2.835,          // 15mm (wie Rechnung)
     left: 25 * 2.835,
     right: 20 * 2.835,
   },
   footerDivider: {
     borderTopWidth: 0.5,
     borderTopColor: '#d1d5db',
-    paddingTop: 5,
+    paddingTop: 6,
   },
   footerContent: {
     flexDirection: 'row',
@@ -355,10 +365,19 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
           <Text style={styles.text}>Verwendungszweck: {document.number}</Text>
         </View>
 
-        {/* Closing */}
+        {/* Grußformel (DIN 5008 - konsistent mit Rechnung) */}
         <View style={styles.closingSection}>
           <Text style={styles.closingText}>{closingText}</Text>
-          <Text style={styles.closingText}>Mit freundlichen Grüßen</Text>
+          <Text style={styles.greeting}>Mit freundlichen Grüßen</Text>
+          {profile.signature_url ? (
+            <Image
+              src={profile.signature_url}
+              style={[styles.signature, { height: profile.signature_size || 50 }]}
+            />
+          ) : (
+            /* Platz für handschriftliche Unterschrift */
+            <View style={{ height: 50, marginTop: 8, marginBottom: 8 }} />
+          )}
           <Text style={styles.signatureName}>{profile.company_name}</Text>
         </View>
 
