@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
 import { UpgradeButton } from '@/components/pricing/upgrade-button';
-import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
 import type { Profile, Subscription } from '@/types/database';
 
 function formatDate(dateString: string | null): string {
@@ -24,6 +25,9 @@ export default function SettingsPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [reactivateLoading, setReactivateLoading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState<{ endDate: string } | null>(null);
   const [saved, setSaved] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -139,22 +143,24 @@ export default function SettingsPage() {
   };
 
   const handleCancelSubscription = async () => {
-    if (!confirm('Möchtest du dein Abo wirklich kündigen? Du behältst den Zugang bis zum Ende der Laufzeit.')) {
-      return;
-    }
-
     setCancelLoading(true);
     try {
       const response = await fetch('/api/stripe/cancel', { method: 'POST' });
       const data = await response.json();
 
       if (response.ok) {
-        alert('Dein Abo wurde gekündigt. Du behältst den Zugang bis zum Ende der Laufzeit.');
-        // Seite neu laden um aktuelle Daten anzuzeigen
-        window.location.reload();
+        setShowCancelModal(false);
+        // Update local state
+        const endDate = data.period_end ? formatDate(data.period_end) : 'Ende der Laufzeit';
+        setCancelSuccess({ endDate });
+        setSubscription(prev => prev ? {
+          ...prev,
+          cancel_at_period_end: true,
+          current_period_end: data.period_end,
+        } : null);
       } else {
         console.error('Cancel error:', data);
-        alert('Fehler beim Kündigen: ' + data.error + (data.debug ? '\n\nDebug: ' + JSON.stringify(data.debug) : ''));
+        alert('Fehler beim Kündigen: ' + data.error);
       }
     } catch (err) {
       console.error('Cancel exception:', err);
@@ -162,6 +168,36 @@ export default function SettingsPage() {
     } finally {
       setCancelLoading(false);
     }
+  };
+
+  const handleReactivateSubscription = async () => {
+    setReactivateLoading(true);
+    try {
+      const response = await fetch('/api/stripe/reactivate', { method: 'POST' });
+      const data = await response.json();
+
+      if (response.ok) {
+        setCancelSuccess(null);
+        setSubscription(prev => prev ? {
+          ...prev,
+          cancel_at_period_end: false,
+        } : null);
+      } else {
+        console.error('Reactivate error:', data);
+        alert('Fehler beim Reaktivieren: ' + data.error);
+      }
+    } catch (err) {
+      console.error('Reactivate exception:', err);
+      alert('Ein Fehler ist aufgetreten. Bitte versuche es erneut.');
+    } finally {
+      setReactivateLoading(false);
+    }
+  };
+
+  const getPlanDisplayName = () => {
+    if (subscription?.plan === 'yearly') return 'Jahresabo';
+    if (subscription?.plan === 'monthly') return 'Monatsabo';
+    return 'Abo';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -248,6 +284,49 @@ export default function SettingsPage() {
       <PageHeader title="Einstellungen" />
 
       <div className="p-4 sm:p-6 max-w-2xl space-y-6">
+        {/* Cancel Confirmation Modal */}
+        <Modal isOpen={showCancelModal} onClose={() => setShowCancelModal(false)}>
+          <ModalHeader>
+            <h3 className="text-xl font-semibold text-white">Abo kündigen?</h3>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <p className="text-gray-300">
+                Möchtest du dein {getPlanDisplayName()} wirklich kündigen?
+              </p>
+              <div className="bg-blue-900/30 border border-blue-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-blue-300">
+                    <p className="font-medium mb-1">Keine Sorge!</p>
+                    <ul className="list-disc list-inside space-y-1 text-blue-400">
+                      <li>Du behältst den vollen Zugang bis zum Ende der Laufzeit</li>
+                      <li>Bereits bezahlte Beträge werden nicht erstattet</li>
+                      <li>Du kannst jederzeit wieder reaktivieren</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowCancelModal(false)}
+              disabled={cancelLoading}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleCancelSubscription}
+              loading={cancelLoading}
+            >
+              Ja, kündigen
+            </Button>
+          </ModalFooter>
+        </Modal>
+
         {/* Subscription Status */}
         <Card>
           <CardHeader>
@@ -257,7 +336,23 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Success message after cancellation */}
+            {cancelSuccess && (
+              <div className="mb-4 p-4 bg-green-900/30 border border-green-700 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="font-medium text-green-400">Kündigung erfolgreich</p>
+                    <p className="text-sm text-green-600">
+                      Dein Zugang bleibt bis zum {cancelSuccess.endDate} aktiv.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {subscription?.plan === 'free' ? (
+              /* FREE PLAN */
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
                   <div>
@@ -297,42 +392,14 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
-            ) : subscription?.plan === 'yearly' ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-800 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="h-6 w-6 text-green-500" />
-                    <div>
-                      <p className="font-medium text-green-400">Jahresabo</p>
-                      <p className="text-sm text-green-600">
-                        Unbegrenzte Rechnungen & Angebote
-                      </p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 bg-green-900 text-green-400 rounded-full text-sm font-medium">
-                    Aktiv
-                  </span>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleCancelSubscription}
-                    disabled={cancelLoading}
-                    className="text-gray-500 hover:text-red-400"
-                  >
-                    {cancelLoading ? 'Wird gekündigt...' : 'Abo kündigen'}
-                  </Button>
-                </div>
-              </div>
             ) : subscription?.cancel_at_period_end ? (
-              <div className="space-y-3">
+              /* CANCELLED (but still active until period end) */
+              <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-yellow-900/30 border border-yellow-800 rounded-lg">
                   <div className="flex items-center gap-3">
                     <AlertCircle className="h-6 w-6 text-yellow-500" />
                     <div>
-                      <p className="font-medium text-yellow-400">Abo gekündigt</p>
+                      <p className="font-medium text-yellow-400">{getPlanDisplayName()} gekündigt</p>
                       <p className="text-sm text-yellow-600">
                         Zugang bis {subscription.current_period_end ? formatDate(subscription.current_period_end) : 'Ende der Laufzeit'}
                       </p>
@@ -342,11 +409,62 @@ export default function SettingsPage() {
                     Gekündigt
                   </span>
                 </div>
-                <p className="text-sm text-gray-400">
-                  Du behältst den vollen Zugang bis zum Ende deiner Laufzeit.
-                </p>
+
+                {/* Big end date display */}
+                <div className="text-center py-6 bg-gray-800/50 rounded-lg border border-gray-700">
+                  <p className="text-sm text-gray-400 mb-1">Dein Zugang endet am</p>
+                  <p className="text-2xl font-bold text-white">
+                    {subscription.current_period_end ? formatDate(subscription.current_period_end) : '—'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Bis dahin kannst du alle Funktionen weiter nutzen.
+                  </p>
+                </div>
+
+                {/* Reactivate button */}
+                <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-blue-400">Abo reaktivieren</p>
+                      <p className="text-sm text-gray-400">
+                        Abo fortsetzen ohne Unterbrechung
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleReactivateSubscription}
+                      disabled={reactivateLoading}
+                      className="gap-2"
+                    >
+                      {reactivateLoading ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          Wird reaktiviert...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4" />
+                          Reaktivieren
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Or start a new subscription */}
+                <div className="text-center text-sm text-gray-500">
+                  <p>Oder starte nach Ablauf ein neues Abo:</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <UpgradeButton plan="yearly" variant="outline">
+                    Jahresabo (30 €/Jahr)
+                  </UpgradeButton>
+                  <UpgradeButton plan="monthly" variant="outline">
+                    Monatsabo (5 €/Monat)
+                  </UpgradeButton>
+                </div>
               </div>
             ) : subscription?.status === 'expired' ? (
+              /* EXPIRED */
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-red-900/30 border border-red-800 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -371,13 +489,14 @@ export default function SettingsPage() {
                   </UpgradeButton>
                 </div>
               </div>
-            ) : (
+            ) : (subscription?.plan === 'yearly' || subscription?.plan === 'monthly') ? (
+              /* ACTIVE PAID PLAN */
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-green-900/30 border border-green-800 rounded-lg">
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-6 w-6 text-green-500" />
                     <div>
-                      <p className="font-medium text-green-400">Monatliches Abo</p>
+                      <p className="font-medium text-green-400">{getPlanDisplayName()}</p>
                       <p className="text-sm text-green-600">
                         Unbegrenzte Rechnungen & Angebote
                       </p>
@@ -388,32 +507,45 @@ export default function SettingsPage() {
                   </span>
                 </div>
 
-                {/* Upgrade zu Jahresabo */}
-                <div className="border border-blue-800 bg-blue-900/20 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-blue-400">Auf Jahresabo wechseln</p>
-                      <p className="text-sm text-gray-400">
-                        30 €/Jahr - spare 30 € gegenüber monatlich
-                      </p>
-                    </div>
-                    <UpgradeButton plan="yearly" size="sm">
-                      Wechseln
-                    </UpgradeButton>
+                {/* Next billing date if available */}
+                {subscription.current_period_end && (
+                  <div className="text-sm text-gray-400 px-1">
+                    Nächste Verlängerung: {formatDate(subscription.current_period_end)}
                   </div>
-                </div>
+                )}
 
-                <div className="flex justify-end">
+                {/* Upgrade option for monthly subscribers */}
+                {subscription?.plan === 'monthly' && (
+                  <div className="border border-blue-800 bg-blue-900/20 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-blue-400">Auf Jahresabo wechseln</p>
+                        <p className="text-sm text-gray-400">
+                          30 €/Jahr - spare 30 € gegenüber monatlich
+                        </p>
+                      </div>
+                      <UpgradeButton plan="yearly" size="sm">
+                        Wechseln
+                      </UpgradeButton>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-2">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={handleCancelSubscription}
-                    disabled={cancelLoading}
+                    onClick={() => setShowCancelModal(true)}
                     className="text-gray-500 hover:text-red-400"
                   >
-                    {cancelLoading ? 'Wird gekündigt...' : 'Abo kündigen'}
+                    Abo kündigen
                   </Button>
                 </div>
+              </div>
+            ) : (
+              /* FALLBACK - Unknown state */
+              <div className="text-center py-4 text-gray-400">
+                <p>Abo-Status wird geladen...</p>
               </div>
             )}
           </CardContent>
