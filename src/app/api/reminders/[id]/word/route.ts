@@ -33,7 +33,7 @@ export async function GET(
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const level = parseInt(searchParams.get('level') || '1', 10);
+    const level = parseInt(searchParams.get('level') || '0', 10);
     const customText = searchParams.get('text') ? decodeURIComponent(searchParams.get('text')!) : null;
     const customClosing = searchParams.get('closing') ? decodeURIComponent(searchParams.get('closing')!) : null;
 
@@ -82,7 +82,8 @@ export async function GET(
     // Get level title
     const getLevelTitle = () => {
       switch (level) {
-        case 1: return 'Zahlungserinnerung';
+        case 0: return 'Zahlungserinnerung';
+        case 1: return '1. Mahnung';
         case 2: return '2. Mahnung';
         case 3: return 'Letzte Mahnung';
         default: return `${level}. Mahnung`;
@@ -99,12 +100,14 @@ export async function GET(
         : 'Sehr geehrte Damen und Herren';
 
       switch (level) {
+        case 0:
+          return `${salutation},\n\nwir möchten Sie freundlich daran erinnern, dass die oben genannte Rechnung fällig ist. Bitte überweisen Sie den ausstehenden Betrag auf das in der Rechnung angegebene Konto.\n\nSollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie diese Erinnerung bitte als gegenstandslos.`;
         case 1:
-          return `${salutation},\n\nbei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung noch nicht beglichen wurde. Wir möchten Sie freundlich daran erinnern, den ausstehenden Betrag zu überweisen.\n\nSollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie dieses bitte als gegenstandslos.`;
+          return `${salutation},\n\nbei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung trotz unserer Zahlungserinnerung noch nicht beglichen wurde.\n\nWir bitten Sie, den ausstehenden Betrag innerhalb von 14 Tagen zu überweisen.`;
         case 2:
-          return `${salutation},\n\ntrotz unserer Zahlungserinnerung ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.\n\nWir bitten Sie daher nochmals, den ausstehenden Betrag umgehend zu begleichen.`;
+          return `${salutation},\n\ntrotz unserer bisherigen Erinnerungen ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.\n\nWir fordern Sie hiermit auf, den ausstehenden Betrag innerhalb von 10 Tagen zu begleichen.`;
         default:
-          return `${salutation},\n\nleider müssen wir feststellen, dass Sie trotz unserer bisherigen Mahnungen den ausstehenden Rechnungsbetrag nicht beglichen haben.\n\nDies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, weitere rechtliche Schritte einzuleiten.`;
+          return `${salutation},\n\nleider müssen wir feststellen, dass Sie trotz unserer bisherigen Mahnungen den ausstehenden Rechnungsbetrag nicht beglichen haben.\n\nDies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, rechtliche Schritte einzuleiten.`;
       }
     };
 

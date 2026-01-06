@@ -210,7 +210,8 @@ export function ReminderPDF({
 
   const getLevelTitle = () => {
     switch (level) {
-      case 1: return 'Zahlungserinnerung';
+      case 0: return 'Zahlungserinnerung';
+      case 1: return '1. Mahnung';
       case 2: return '2. Mahnung';
       case 3: return 'Letzte Mahnung';
       default: return `${level}. Mahnung`;
@@ -225,24 +226,30 @@ export function ReminderPDF({
       : 'Sehr geehrte Damen und Herren';
 
     switch (level) {
+      case 0:
+        return `${salutation},
+
+wir möchten Sie freundlich daran erinnern, dass die oben genannte Rechnung fällig ist. Bitte überweisen Sie den ausstehenden Betrag auf das in der Rechnung angegebene Konto.
+
+Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie diese Erinnerung bitte als gegenstandslos.`;
       case 1:
         return `${salutation},
 
-bei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung noch nicht beglichen wurde. Wir möchten Sie freundlich daran erinnern, den ausstehenden Betrag zu überweisen.
+bei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung trotz unserer Zahlungserinnerung noch nicht beglichen wurde.
 
-Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie dieses bitte als gegenstandslos.`;
+Wir bitten Sie, den ausstehenden Betrag innerhalb von 14 Tagen zu überweisen.`;
       case 2:
         return `${salutation},
 
-trotz unserer Zahlungserinnerung ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.
+trotz unserer bisherigen Erinnerungen ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.
 
-Wir bitten Sie daher nochmals, den ausstehenden Betrag umgehend zu begleichen.`;
+Wir fordern Sie hiermit auf, den ausstehenden Betrag innerhalb von 10 Tagen zu begleichen.`;
       default:
         return `${salutation},
 
 leider müssen wir feststellen, dass Sie trotz unserer bisherigen Mahnungen den ausstehenden Rechnungsbetrag nicht beglichen haben.
 
-Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, weitere rechtliche Schritte einzuleiten.`;
+Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, rechtliche Schritte einzuleiten.`;
     }
   };
 

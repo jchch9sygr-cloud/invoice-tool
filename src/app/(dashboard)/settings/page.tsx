@@ -329,7 +329,7 @@ export default function SettingsPage() {
       <PageHeader title="Einstellungen" />
 
       <div className="p-4 sm:p-6">
-        <div className="flex flex-col lg:flex-row gap-6 max-w-5xl">
+        <div className="flex flex-col xl:flex-row gap-6 max-w-7xl">
           {/* Main Content */}
           <div className="flex-1 max-w-2xl space-y-6">
         {/* Cancel Confirmation Modal */}
@@ -935,10 +935,10 @@ export default function SettingsPage() {
           </div>
 
           {/* Help Panel - Sidebar */}
-          <div className="lg:w-[420px] xl:w-[480px] shrink-0">
-            <div className="lg:sticky lg:top-20 space-y-4">
+          <div className="xl:w-[600px] 2xl:w-[700px] shrink-0">
+            <div className="xl:sticky xl:top-20 space-y-4">
               {/* 2x2 Grid für Workflow + Einstellungen-Hilfe */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Workflow Guide - App-Ablauf */}
                 <WorkflowGuide />
 
@@ -951,7 +951,7 @@ export default function SettingsPage() {
               </div>
 
               {/* 2x2 Grid für Quick Tips + Keyboard */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Quick Tips */}
                 <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-800/30 rounded-2xl p-5">
                   <div className="flex items-center gap-2 mb-3">

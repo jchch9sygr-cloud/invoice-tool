@@ -201,16 +201,16 @@ export default function LandingPage() {
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
             {[
               { icon: FileText, title: 'Rechnungen & Angebote', desc: 'Professionelle Dokumente im DIN 5008 Format' },
-              { icon: AlertTriangle, title: 'Mahnwesen', desc: '3 Mahnstufen mit automatischen Texten', highlight: true },
+              { icon: AlertTriangle, title: 'Mahnwesen komplett', desc: 'Zahlungserinnerung + 3 Mahnstufen', highlight: true },
+              { icon: Clock, title: 'Fälligkeits-Alarm', desc: 'Automatische Benachrichtigung bei Überfälligkeit', highlight: true },
               { icon: FileDown, title: 'PDF & Word Export', desc: 'Alle Dokumente als PDF oder Word' },
-              { icon: PenLine, title: 'Dokumente bearbeiten', desc: 'Fehler korrigieren, solange nicht bezahlt' },
               { icon: RefreshCw, title: 'Angebot → Rechnung', desc: 'Mit einem Klick umwandeln' },
               { icon: Users, title: 'Kundenverwaltung', desc: 'Einmal anlegen, immer wieder nutzen' },
               { icon: Search, title: 'Globale Suche', desc: 'Finde alles sofort mit ⌘K' },
+              { icon: Sparkles, title: 'Onboarding-Guide', desc: 'Schritt-für-Schritt Anleitung integriert' },
               { icon: Edit3, title: 'Logo & Unterschrift', desc: 'Hochladen, Größe anpassen – fertig' },
-              { icon: Clock, title: 'Kleinunternehmer §19', desc: 'Ein Klick aktiviert den Hinweis' },
+              { icon: Shield, title: 'Kleinunternehmer §19', desc: 'Ein Klick aktiviert den Hinweis' },
               { icon: CreditCard, title: 'Bezahlt-Status', desc: 'Markieren und Dokument wird gesperrt' },
-              { icon: Shield, title: 'GoBD-konform', desc: 'Alle Pflichtangaben automatisch' },
               { icon: Zap, title: 'Blitzschnell', desc: 'Keine Wartezeiten, keine Ladebalken' },
             ].map((feature, i) => (
               <div
@@ -355,7 +355,7 @@ export default function LandingPage() {
             {[
               {
                 q: 'Wie funktioniert das Mahnwesen?',
-                a: 'Überfällige Rechnungen werden automatisch angezeigt. Du wählst eine aus, passt optional den Text an, und lädst die Mahnung als PDF oder Word herunter. Es gibt 3 Stufen: Zahlungserinnerung, 2. Mahnung und Letzte Mahnung.',
+                a: 'Überfällige Rechnungen werden im Dashboard angezeigt mit Popup zum Versenden. Gesetzeskonform: Erst Zahlungserinnerung, dann 1. Mahnung, 2. Mahnung und Letzte Mahnung. Texte sind vorgefertigt und editierbar.',
               },
               {
                 q: 'Kann ich Rechnungen nachträglich bearbeiten?',
@@ -380,6 +380,10 @@ export default function LandingPage() {
               {
                 q: 'Sind die Rechnungen rechtsgültig?',
                 a: 'Ja. Alle Dokumente folgen dem DIN 5008 Briefstandard, enthalten alle Pflichtangaben und sind GoBD-konform.',
+              },
+              {
+                q: 'Ich bin Anfänger – wo fange ich an?',
+                a: 'Beim ersten Login siehst du eine Schritt-für-Schritt Anleitung: 1. Firmendaten einrichten, 2. Kunden anlegen, 3. Rechnung erstellen. In den Einstellungen findest du außerdem Hilfe-Panels mit Erklärungen.',
               },
             ].map((faq, i) => (
               <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-gray-700 transition-colors">

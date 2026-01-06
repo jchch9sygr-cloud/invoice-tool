@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, FileCheck, Users, Plus, Sparkles, ArrowRight, Settings, Search, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
+import { OverdueNotification } from '@/components/dashboard/overdue-notification';
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -151,6 +152,9 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Overdue Invoice Notification - nur für nicht-neue User */}
+        {!isNewUser && <OverdueNotification />}
 
         {/* Free tier notice */}
         {freeDocsRemaining !== null && !isNewUser && (

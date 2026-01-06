@@ -59,24 +59,30 @@ function getDefaultReminderText(level: number, customerName: string, lastReminde
     : 'Sehr geehrte Damen und Herren';
 
   switch (level) {
+    case 0:
+      return `${salutation},
+
+wir möchten Sie freundlich daran erinnern, dass die oben genannte Rechnung fällig ist. Bitte überweisen Sie den ausstehenden Betrag auf das in der Rechnung angegebene Konto.
+
+Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie diese Erinnerung bitte als gegenstandslos.`;
     case 1:
       return `${salutation},
 
-bei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung noch nicht beglichen wurde. Wir möchten Sie freundlich daran erinnern, den ausstehenden Betrag zu überweisen.
+bei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung trotz unserer Zahlungserinnerung${lastReminderDate ? ` vom ${formatDate(lastReminderDate)}` : ''} noch nicht beglichen wurde.
 
-Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie dieses bitte als gegenstandslos.`;
+Wir bitten Sie, den ausstehenden Betrag innerhalb von 14 Tagen zu überweisen. Bei Fragen zur Rechnung nehmen Sie bitte Kontakt mit uns auf.`;
     case 2:
       return `${salutation},
 
-trotz unserer Zahlungserinnerung${lastReminderDate ? ` vom ${formatDate(lastReminderDate)}` : ''} ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.
+trotz unserer bisherigen Erinnerungen ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.
 
-Wir bitten Sie daher nochmals, den ausstehenden Betrag umgehend zu begleichen. Sollten Sie Fragen zur Rechnung haben oder eine Ratenzahlung wünschen, nehmen Sie bitte Kontakt mit uns auf.`;
+Wir fordern Sie hiermit auf, den ausstehenden Betrag innerhalb von 10 Tagen zu begleichen. Sollten Sie Fragen zur Rechnung haben oder eine Ratenzahlung wünschen, nehmen Sie bitte umgehend Kontakt mit uns auf.`;
     default:
       return `${salutation},
 
 leider müssen wir feststellen, dass Sie trotz unserer bisherigen Mahnungen den ausstehenden Rechnungsbetrag nicht beglichen haben.
 
-Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, weitere rechtliche Schritte einzuleiten.`;
+Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, rechtliche Schritte einzuleiten und die Forderung an ein Inkassounternehmen zu übergeben.`;
   }
 }
 
@@ -87,7 +93,7 @@ export default function RemindersPage() {
   const [filteredInvoices, setFilteredInvoices] = useState<OverdueInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<OverdueInvoice | null>(null);
-  const [reminderLevel, setReminderLevel] = useState(1);
+  const [reminderLevel, setReminderLevel] = useState(0);
   const [reminderText, setReminderText] = useState('');
   const [closingText, setClosingText] = useState('Für Rückfragen stehen wir Ihnen gerne zur Verfügung.');
   const [isEditing, setIsEditing] = useState(false);
@@ -121,11 +127,14 @@ export default function RemindersPage() {
         selectedInvoice.last_reminder_date
       );
       setReminderText(defaultText);
-      setClosingText(
-        reminderLevel >= 3
-          ? 'Wir erwarten Ihre Zahlung innerhalb von 7 Tagen.'
-          : 'Für Rückfragen stehen wir Ihnen gerne zur Verfügung.'
-      );
+      // Closing text based on level
+      if (reminderLevel === 0) {
+        setClosingText('Für Rückfragen stehen wir Ihnen jederzeit gerne zur Verfügung.');
+      } else if (reminderLevel >= 3) {
+        setClosingText('Wir erwarten Ihre Zahlung innerhalb von 7 Tagen.');
+      } else {
+        setClosingText('Für Rückfragen stehen wir Ihnen gerne zur Verfügung.');
+      }
     }
   }, [reminderLevel, selectedInvoice]);
 
@@ -154,7 +163,8 @@ export default function RemindersPage() {
 
   const handleSelectInvoice = (invoice: OverdueInvoice) => {
     setSelectedInvoice(invoice);
-    const newLevel = (invoice.reminder_count || 0) + 1;
+    // Start at level 0 (Zahlungserinnerung) for new, then increment
+    const newLevel = invoice.reminder_count || 0;
     setReminderLevel(Math.min(newLevel, 3));
     setIsEditing(false);
   };
@@ -207,7 +217,8 @@ export default function RemindersPage() {
 
   const getReminderLevelLabel = (level: number): string => {
     switch (level) {
-      case 1: return 'Zahlungserinnerung';
+      case 0: return 'Erinnerung';
+      case 1: return '1. Mahnung';
       case 2: return '2. Mahnung';
       case 3: return 'Letzte Mahnung';
       default: return `${level}. Mahnung`;
@@ -216,9 +227,20 @@ export default function RemindersPage() {
 
   const getReminderLevelColor = (level: number): string => {
     switch (level) {
+      case 0: return 'text-cyan-400';
       case 1: return 'text-yellow-400';
       case 2: return 'text-orange-400';
       default: return 'text-red-400';
+    }
+  };
+
+  const getReminderLevelBgColor = (level: number, isSelected: boolean): string => {
+    if (!isSelected) return 'bg-gray-700 text-gray-300 hover:bg-gray-600';
+    switch (level) {
+      case 0: return 'bg-cyan-600 text-white';
+      case 1: return 'bg-yellow-600 text-white';
+      case 2: return 'bg-orange-600 text-white';
+      default: return 'bg-red-600 text-white';
     }
   };
 
@@ -295,8 +317,8 @@ export default function RemindersPage() {
                           </div>
                         </div>
                         {invoice.reminder_count > 0 && (
-                          <p className={`text-xs mt-1 ${getReminderLevelColor(invoice.reminder_count)}`}>
-                            {invoice.reminder_count}. Mahnung gesendet
+                          <p className={`text-xs mt-1 ${getReminderLevelColor(invoice.reminder_count - 1)}`}>
+                            {getReminderLevelLabel(invoice.reminder_count - 1)} gesendet
                           </p>
                         )}
                       </button>
@@ -348,19 +370,15 @@ export default function RemindersPage() {
                   {/* Mahnstufe */}
                   <div>
                     <label className="block text-xs font-medium text-gray-400 mb-2">
-                      Mahnstufe
+                      Stufe wählen
                     </label>
-                    <div className="flex gap-2">
-                      {[1, 2, 3].map((level) => (
+                    <div className="grid grid-cols-2 gap-2">
+                      {[0, 1, 2, 3].map((level) => (
                         <button
                           key={level}
                           onClick={() => setReminderLevel(level)}
-                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                            reminderLevel === level
-                              ? level === 1 ? 'bg-yellow-600 text-white'
-                              : level === 2 ? 'bg-orange-600 text-white'
-                              : 'bg-red-600 text-white'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                            getReminderLevelBgColor(level, reminderLevel === level)
                           }`}
                         >
                           {getReminderLevelLabel(level)}
