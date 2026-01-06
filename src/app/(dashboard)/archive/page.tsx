@@ -142,9 +142,14 @@ export default function ArchivePage() {
                           <p className="text-sm text-gray-400 mt-0.5 truncate">
                             {doc.customer?.name || 'Kein Kunde'}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Archiviert am {formatDate(doc.archived_at)}
-                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-sm font-semibold text-white sm:hidden">
+                              {formatCurrency(total)}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Archiviert am {formatDate(doc.archived_at)}
+                            </p>
+                          </div>
                         </div>
                       </div>
 

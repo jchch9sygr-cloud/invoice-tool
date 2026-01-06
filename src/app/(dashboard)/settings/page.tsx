@@ -969,7 +969,7 @@ export default function SettingsPage() {
                         max="90"
                         value={formData.reminder_days_first || 7}
                         onChange={(e) => setFormData({ ...formData, reminder_days_first: parseInt(e.target.value) || 7 })}
-                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                        className="w-16 sm:w-20 px-2 sm:px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
                       />
                       <span className="text-sm text-gray-500">Tage</span>
                     </div>
@@ -986,7 +986,7 @@ export default function SettingsPage() {
                         max="90"
                         value={formData.reminder_days_second || 14}
                         onChange={(e) => setFormData({ ...formData, reminder_days_second: parseInt(e.target.value) || 14 })}
-                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                        className="w-16 sm:w-20 px-2 sm:px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
                       />
                       <span className="text-sm text-gray-500">Tage</span>
                     </div>
@@ -1003,7 +1003,7 @@ export default function SettingsPage() {
                         max="90"
                         value={formData.reminder_days_third || 14}
                         onChange={(e) => setFormData({ ...formData, reminder_days_third: parseInt(e.target.value) || 14 })}
-                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                        className="w-16 sm:w-20 px-2 sm:px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
                       />
                       <span className="text-sm text-gray-500">Tage</span>
                     </div>
@@ -1020,7 +1020,7 @@ export default function SettingsPage() {
                         max="90"
                         value={formData.reminder_days_final || 7}
                         onChange={(e) => setFormData({ ...formData, reminder_days_final: parseInt(e.target.value) || 7 })}
-                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                        className="w-16 sm:w-20 px-2 sm:px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
                       />
                       <span className="text-sm text-gray-500">Tage</span>
                     </div>

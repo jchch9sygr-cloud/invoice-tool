@@ -48,7 +48,7 @@ function ActionMenu({
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex h-10 w-10 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white sm:hidden"
+        className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white sm:hidden"
         aria-label="Aktionen"
       >
         <MoreVertical className="h-5 w-5" />
