@@ -40,10 +40,24 @@ export async function POST(request: NextRequest) {
         if (userId && plan) {
           // subscription kann ein String oder ein Objekt sein
           let subscriptionId: string | null = null;
+          let currentPeriodEnd: string | null = null;
+
           if (session.mode === 'subscription' && session.subscription) {
             subscriptionId = typeof session.subscription === 'string'
               ? session.subscription
               : session.subscription.id;
+
+            // Fetch full subscription details to get period end
+            if (subscriptionId) {
+              try {
+                const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId) as unknown as { current_period_end: number };
+                if (stripeSubscription.current_period_end) {
+                  currentPeriodEnd = new Date(stripeSubscription.current_period_end * 1000).toISOString();
+                }
+              } catch (err) {
+                console.error('Failed to fetch subscription details:', err);
+              }
+            }
           }
 
           await supabase
@@ -52,6 +66,9 @@ export async function POST(request: NextRequest) {
               plan: plan,
               status: 'active',
               stripe_subscription_id: subscriptionId,
+              stripe_customer_id: session.customer as string,
+              current_period_end: currentPeriodEnd,
+              cancel_at_period_end: false,
             })
             .eq('user_id', userId);
         }

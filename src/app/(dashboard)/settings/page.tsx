@@ -8,9 +8,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
 import { UpgradeButton } from '@/components/pricing/upgrade-button';
-import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle, RefreshCw, Calendar, CreditCard } from 'lucide-react';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
 import type { Profile, Subscription } from '@/types/database';
+
+// Skeleton component for loading states
+function Skeleton({ className }: { className?: string }) {
+  return (
+    <div className={`animate-pulse bg-gray-700 rounded ${className || ''}`} />
+  );
+}
+
+function SubscriptionSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-6 w-6 rounded-full" />
+          <div>
+            <Skeleton className="h-5 w-24 mb-1" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+    </div>
+  );
+}
 
 function formatDate(dateString: string | null): string {
   if (!dateString) return '';
@@ -24,10 +48,12 @@ function formatDate(dateString: string | null): string {
 export default function SettingsPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [reactivateLoading, setReactivateLoading] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState<{ endDate: string } | null>(null);
+  const [reactivateSuccess, setReactivateSuccess] = useState(false);
   const [saved, setSaved] = useState(false);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -61,28 +87,42 @@ export default function SettingsPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [{ data: profileData }, { data: subData }] = await Promise.all([
-      supabase.from('profiles').select('*').eq('user_id', user.id).single(),
-      supabase.from('subscriptions').select('*').eq('user_id', user.id).single(),
-    ]);
+    try {
+      const [{ data: profileData }, { data: subData }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('user_id', user.id).single(),
+        supabase.from('subscriptions').select('*').eq('user_id', user.id).single(),
+      ]);
 
-    if (profileData) {
-      setFormData({
-        ...profileData,
-        logo_size: profileData.logo_size || 56,
-        signature_size: profileData.signature_size || 50,
-      });
-      if (profileData.logo_url) {
-        setLogoPreview(profileData.logo_url);
+      if (profileData) {
+        setFormData({
+          ...profileData,
+          logo_size: profileData.logo_size || 56,
+          signature_size: profileData.signature_size || 50,
+        });
+        if (profileData.logo_url) {
+          setLogoPreview(profileData.logo_url);
+        }
+        if (profileData.signature_url) {
+          setSignaturePreview(profileData.signature_url);
+        }
       }
-      if (profileData.signature_url) {
-        setSignaturePreview(profileData.signature_url);
-      }
-    }
 
-    if (subData) {
-      setSubscription(subData);
+      if (subData) {
+        setSubscription(subData);
+      }
+    } finally {
+      setSubscriptionLoading(false);
     }
+  };
+
+  // Calculate remaining days until period end
+  const getRemainingDays = (): number | null => {
+    if (!subscription?.current_period_end) return null;
+    const endDate = new Date(subscription.current_period_end);
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,10 +218,13 @@ export default function SettingsPage() {
 
       if (response.ok) {
         setCancelSuccess(null);
+        setReactivateSuccess(true);
         setSubscription(prev => prev ? {
           ...prev,
           cancel_at_period_end: false,
         } : null);
+        // Hide success message after 5 seconds
+        setTimeout(() => setReactivateSuccess(false), 5000);
       } else {
         console.error('Reactivate error:', data);
         alert('Fehler beim Reaktivieren: ' + data.error);
@@ -336,22 +379,42 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Success message after cancellation */}
-            {cancelSuccess && (
-              <div className="mb-4 p-4 bg-green-900/30 border border-green-700 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <div>
-                    <p className="font-medium text-green-400">Kündigung erfolgreich</p>
-                    <p className="text-sm text-green-600">
-                      Dein Zugang bleibt bis zum {cancelSuccess.endDate} aktiv.
-                    </p>
+            {/* Loading skeleton */}
+            {subscriptionLoading ? (
+              <SubscriptionSkeleton />
+            ) : (
+              <>
+                {/* Success message after cancellation */}
+                {cancelSuccess && (
+                  <div className="mb-4 p-4 bg-green-900/30 border border-green-700 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="font-medium text-green-400">Kündigung erfolgreich</p>
+                        <p className="text-sm text-green-600">
+                          Dein Zugang bleibt bis zum {cancelSuccess.endDate} aktiv.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                )}
 
-            {subscription?.plan === 'free' ? (
+                {/* Success message after reactivation */}
+                {reactivateSuccess && (
+                  <div className="mb-4 p-4 bg-green-900/30 border border-green-700 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <div>
+                        <p className="font-medium text-green-400">Abo reaktiviert!</p>
+                        <p className="text-sm text-green-600">
+                          Dein Abo wird wie gewohnt verlängert.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {subscription?.plan === 'free' ? (
               /* FREE PLAN */
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
@@ -412,11 +475,19 @@ export default function SettingsPage() {
 
                 {/* Big end date display */}
                 <div className="text-center py-6 bg-gray-800/50 rounded-lg border border-gray-700">
-                  <p className="text-sm text-gray-400 mb-1">Dein Zugang endet am</p>
-                  <p className="text-2xl font-bold text-white">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Calendar className="h-5 w-5 text-gray-400" />
+                    <p className="text-sm text-gray-400">Dein Zugang endet am</p>
+                  </div>
+                  <p className="text-3xl font-bold text-white mb-1">
                     {subscription.current_period_end ? formatDate(subscription.current_period_end) : '—'}
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">
+                  {getRemainingDays() !== null && (
+                    <p className="text-lg font-medium text-yellow-400">
+                      Noch {getRemainingDays()} {getRemainingDays() === 1 ? 'Tag' : 'Tage'}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-500 mt-3">
                     Bis dahin kannst du alle Funktionen weiter nutzen.
                   </p>
                 </div>
@@ -509,8 +580,12 @@ export default function SettingsPage() {
 
                 {/* Next billing date if available */}
                 {subscription.current_period_end && (
-                  <div className="text-sm text-gray-400 px-1">
-                    Nächste Verlängerung: {formatDate(subscription.current_period_end)}
+                  <div className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                    <CreditCard className="h-5 w-5 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-400">Nächste Verlängerung</p>
+                      <p className="font-medium text-white">{formatDate(subscription.current_period_end)}</p>
+                    </div>
                   </div>
                 )}
 
@@ -545,8 +620,10 @@ export default function SettingsPage() {
             ) : (
               /* FALLBACK - Unknown state */
               <div className="text-center py-4 text-gray-400">
-                <p>Abo-Status wird geladen...</p>
+                <p>Abo-Status konnte nicht geladen werden.</p>
               </div>
+            )}
+              </>
             )}
           </CardContent>
         </Card>
