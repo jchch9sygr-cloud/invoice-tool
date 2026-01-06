@@ -115,6 +115,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             })}
           </nav>
 
+          {/* Keyboard Shortcut Hint */}
+          <div className="px-3 pb-2">
+            <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-3">
+              <p className="text-xs text-gray-500 mb-1">Schnellsuche</p>
+              <div className="flex items-center gap-2">
+                <kbd className="px-2 py-0.5 bg-gray-700 rounded text-xs font-mono text-gray-300">⌘K</kbd>
+                <span className="text-xs text-gray-500">oder</span>
+                <kbd className="px-2 py-0.5 bg-gray-700 rounded text-xs font-mono text-gray-300">Strg+K</kbd>
+              </div>
+            </div>
+          </div>
+
           {/* Logout */}
           <div className="border-t border-gray-800 p-3">
             <button
