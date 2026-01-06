@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
-import { Download, ArrowLeft, Lock } from 'lucide-react';
+import { Download, ArrowLeft, Lock, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { formatCurrency, formatDate, calculateTotal, calculateVat, calculateGrossTotal, getKleinunternehmerText } from '@/lib/utils';
@@ -79,6 +79,12 @@ export default async function InvoiceDetailPage({
               <span className="hidden sm:inline sm:ml-1">PDF</span>
             </Button>
           </Link>
+          <a href={`/api/documents/${id}/word`} download>
+            <Button variant="outline" size="sm" className="px-2 sm:px-3">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline sm:ml-1">Word</span>
+            </Button>
+          </a>
           <DocumentActions document={document} />
         </div>
       </PageHeader>
@@ -232,13 +238,16 @@ export default async function InvoiceDetailPage({
             <div className="mt-6 text-sm">
               <p className="mb-4">Wir bedanken uns für die Zusammenarbeit.</p>
               <p className="mb-2">Mit freundlichen Grüßen</p>
-              {effectiveProfile?.signature_url && (
+              {effectiveProfile?.signature_url ? (
                 <img
                   src={effectiveProfile.signature_url}
                   alt="Unterschrift"
                   style={{ height: effectiveProfile.signature_size || 50 }}
                   className="w-auto object-contain mb-1"
                 />
+              ) : (
+                /* Platz für handschriftliche Unterschrift */
+                <div className="h-12 my-2" />
               )}
               <p className="font-semibold">
                 {document.sender_name || effectiveProfile?.company_name}

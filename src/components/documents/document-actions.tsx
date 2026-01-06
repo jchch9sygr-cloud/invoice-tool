@@ -6,11 +6,13 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
   CheckCircle,
+  XCircle,
   FileText,
   Loader2,
   MoreVertical,
   Settings,
   Trash2,
+  FileDown,
 } from 'lucide-react';
 import type { Document } from '@/types/database';
 
@@ -46,6 +48,10 @@ export function DocumentActions({ document }: DocumentActionsProps) {
       switch (action) {
         case 'mark-paid':
           setMessage({ type: 'success', text: 'Rechnung als bezahlt markiert' });
+          router.refresh();
+          break;
+        case 'unmark-paid':
+          setMessage({ type: 'success', text: 'Bezahlt-Status aufgehoben' });
           router.refresh();
           break;
         case 'convert':
@@ -101,6 +107,7 @@ export function DocumentActions({ document }: DocumentActionsProps) {
   const isInvoice = document.type === 'invoice';
   const isPaid = document.status === 'paid';
   const canMarkPaid = isInvoice && !isPaid;
+  const canUnmarkPaid = isInvoice && isPaid;
   const canConvert = document.type === 'quote';
   const canDelete = true; // API prüft ob bezahlte Rechnungen gelöscht werden dürfen
 
@@ -121,6 +128,23 @@ export function DocumentActions({ document }: DocumentActionsProps) {
               <CheckCircle className="h-4 w-4 mr-1" />
             )}
             Als bezahlt
+          </Button>
+        )}
+
+        {canUnmarkPaid && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleAction('unmark-paid')}
+            disabled={!!loading}
+            className="text-yellow-400 hover:text-yellow-300 hover:border-yellow-500"
+          >
+            {loading === 'unmark-paid' ? (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+            ) : (
+              <XCircle className="h-4 w-4 mr-1" />
+            )}
+            Unbezahlt
           </Button>
         )}
 
@@ -187,6 +211,16 @@ export function DocumentActions({ document }: DocumentActionsProps) {
                 >
                   <CheckCircle className="h-4 w-4" />
                   Als bezahlt markieren
+                </button>
+              )}
+
+              {canUnmarkPaid && (
+                <button
+                  onClick={() => handleAction('unmark-paid')}
+                  className="w-full px-4 py-2 text-left text-sm text-yellow-400 hover:bg-gray-700 flex items-center gap-2"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Bezahlt-Status aufheben
                 </button>
               )}
 

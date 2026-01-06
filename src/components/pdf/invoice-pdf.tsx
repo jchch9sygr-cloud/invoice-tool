@@ -369,11 +369,14 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
               : 'Wir freuen uns auf Ihre Rückmeldung.'}
           </Text>
           <Text style={styles.greeting}>Mit freundlichen Grüßen</Text>
-          {profile.signature_url && (
+          {profile.signature_url ? (
             <Image
               src={profile.signature_url}
               style={[styles.signature, { height: profile.signature_size || 50 }]}
             />
+          ) : (
+            /* Platz für handschriftliche Unterschrift */
+            <View style={{ height: 50, marginTop: 8, marginBottom: 8 }} />
           )}
           <Text style={styles.signatureName}>
             {document.sender_name || profile.company_name}
