@@ -35,37 +35,36 @@ export async function POST() {
       }, { status: 400 });
     }
 
-    // Cancel at period end (user keeps access until subscription ends)
-    await stripe.subscriptions.update(
-      subscription.stripe_subscription_id,
-      { cancel_at_period_end: true }
-    );
-
-    // Fetch subscription to get current_period_end
+    // Fetch subscription first to check status
     const stripeResponse = await stripe.subscriptions.retrieve(
       subscription.stripe_subscription_id
     );
 
-    // Cast to any for debugging and access
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stripeSubscription = stripeResponse as any;
 
-    // Debug: Log the full Stripe response
-    console.log('=== STRIPE SUBSCRIPTION DEBUG ===');
-    console.log('Type:', typeof stripeSubscription);
-    console.log('Keys:', Object.keys(stripeSubscription));
-    console.log('current_period_end:', stripeSubscription.current_period_end);
-    console.log('cancel_at_period_end:', stripeSubscription.cancel_at_period_end);
+    console.log('=== STRIPE SUBSCRIPTION STATUS ===');
     console.log('status:', stripeSubscription.status);
-    console.log('=================================');
+    console.log('cancel_at_period_end:', stripeSubscription.cancel_at_period_end);
+    console.log('current_period_end:', stripeSubscription.current_period_end);
+    console.log('==================================');
+
+    // Only update if not already cancelled
+    if (stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end) {
+      await stripe.subscriptions.update(
+        subscription.stripe_subscription_id,
+        { cancel_at_period_end: true }
+      );
+      console.log('Subscription cancelled successfully');
+    } else {
+      console.log('Subscription already cancelled or not active, skipping update');
+    }
 
     // Get current period end from the subscription
     let periodEnd: string | null = null;
     if (stripeSubscription.current_period_end) {
       periodEnd = new Date(stripeSubscription.current_period_end * 1000).toISOString();
       console.log('Parsed periodEnd:', periodEnd);
-    } else {
-      console.log('current_period_end is missing or falsy');
     }
 
     // Update database
