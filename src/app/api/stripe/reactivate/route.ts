@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { stripe } from '@/lib/stripe';
 
 export async function POST() {
@@ -8,8 +9,15 @@ export async function POST() {
   }
 
   try {
+    // Auth client for user verification
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
+
+    // Service client for database updates (bypasses RLS)
+    const supabaseAdmin = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     if (!user) {
       return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
@@ -58,13 +66,24 @@ export async function POST() {
       { cancel_at_period_end: false }
     );
 
-    // Update database
-    await supabase
+    // Update database using admin client (bypasses RLS)
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         cancel_at_period_end: false,
       })
       .eq('user_id', user.id);
+
+    if (updateError) {
+      console.error('Database update failed:', updateError);
+      return NextResponse.json({
+        success: true,
+        message: 'Stripe aktualisiert, aber lokale Datenbank fehlgeschlagen.',
+        warning: true,
+      });
+    }
+
+    console.log('Database updated successfully - reactivated for user:', user.id);
 
     return NextResponse.json({
       success: true,

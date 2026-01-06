@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { stripe } from '@/lib/stripe';
 
 export async function POST() {
@@ -8,8 +9,15 @@ export async function POST() {
   }
 
   try {
+    // Auth client for user verification
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
+
+    // Service client for database updates (bypasses RLS)
+    const supabaseAdmin = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     if (!user) {
       return NextResponse.json({ error: 'Nicht eingeloggt' }, { status: 401 });
@@ -67,14 +75,26 @@ export async function POST() {
       console.log('Parsed periodEnd:', periodEnd);
     }
 
-    // Update database
-    await supabase
+    // Update database using admin client (bypasses RLS)
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         cancel_at_period_end: true,
         ...(periodEnd && { current_period_end: periodEnd }),
       })
       .eq('user_id', user.id);
+
+    if (updateError) {
+      console.error('Database update failed:', updateError);
+      // Stripe was updated but database failed - return partial success
+      return NextResponse.json({
+        success: true,
+        period_end: periodEnd,
+        warning: 'Stripe aktualisiert, aber lokale Datenbank fehlgeschlagen. Bitte Seite neu laden.',
+      });
+    }
+
+    console.log('Database updated successfully for user:', user.id);
 
     return NextResponse.json({
       success: true,
