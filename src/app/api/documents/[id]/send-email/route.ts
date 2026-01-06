@@ -1,33 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getResend, FROM_EMAIL } from '@/lib/resend';
-import { PaymentReminderEmail } from '@/components/emails/payment-reminder';
+import { SimpleReminderEmail } from '@/components/emails/simple-reminder-email';
+import { ReminderPDFServer } from '@/components/pdf/reminder-pdf-server';
 import { createElement } from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
-import { ReminderPDF } from '@/components/pdf/reminder-pdf';
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('de-DE', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(amount);
-}
-
-function formatDate(date: string | null): string {
-  if (!date) return '—';
-  return new Date(date).toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-}
-
-function getDaysOverdue(dueDate: string): number {
-  const due = new Date(dueDate);
-  const today = new Date();
-  const diffTime = today.getTime() - due.getTime();
-  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-}
 
 export async function POST(
   request: NextRequest,
@@ -86,40 +63,41 @@ export async function POST(
     const vatAmount = (netTotal * (document.vat_rate || 0)) / 100;
     const totalAmount = netTotal + vatAmount;
 
-    const daysOverdue = getDaysOverdue(document.due_date);
     const currentLevel = level ?? 0;
 
-    // Determine email subject and PDF filename
+    // Determine document type name
     const levelNames = ['Zahlungserinnerung', '1. Mahnung', '2. Mahnung', 'Letzte Mahnung'];
-    const levelName = levelNames[currentLevel] || 'Zahlungserinnerung';
+    const levelName = levelNames[Math.min(currentLevel, 3)] || 'Zahlungserinnerung';
 
-    let subject = '';
-    let pdfFilename = '';
+    // Email subject and PDF filename
+    const subject = type === 'reminder'
+      ? `${levelName} - Rechnung ${document.number}`
+      : `Rechnung ${document.number} - ${profile?.company_name || 'RechnungsBlitz'}`;
 
-    if (type === 'reminder') {
-      subject = `${levelName} - Rechnung ${document.number}`;
-      pdfFilename = `${levelName.replace(/\. /g, '-').replace(/ /g, '_')}_${document.number}.pdf`;
-    } else {
-      subject = `Rechnung ${document.number} - ${profile?.company_name || 'RechnungsBlitz'}`;
-      pdfFilename = `Rechnung_${document.number}.pdf`;
-    }
+    const pdfFilename = type === 'reminder'
+      ? `${levelName.replace(/\. /g, '-').replace(/ /g, '_')}_${document.number}.pdf`
+      : `Rechnung_${document.number}.pdf`;
 
     // Generate PDF
     let pdfBuffer: Buffer | null = null;
     try {
-      const pdfElement = createElement(ReminderPDF, {
-        document: document,
-        lineItems: document.line_items || [],
-        customer: document.customer,
+      console.log('Generating PDF for', levelName);
+
+      const pdfElement = createElement(ReminderPDFServer, {
+        document: {
+          number: document.number,
+          date: document.date,
+          due_date: document.due_date,
+        },
         profile: profile || {},
+        customer: document.customer,
         level: currentLevel,
         totalAmount,
-        customText: null,
-        customClosing: null,
       });
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      pdfBuffer = await renderToBuffer(pdfElement as any);
+      // @ts-expect-error - renderToBuffer accepts React elements
+      pdfBuffer = await renderToBuffer(pdfElement);
+      console.log('PDF generated successfully, size:', pdfBuffer?.length);
     } catch (pdfError) {
       console.error('PDF generation error:', pdfError);
       // Continue without PDF if generation fails
@@ -133,23 +111,16 @@ export async function POST(
       }
     ] : [];
 
-    // Send email using Resend
+    // Send email using Resend with simple template
     const resend = getResend();
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
       subject,
-      react: createElement(PaymentReminderEmail, {
+      react: createElement(SimpleReminderEmail, {
         customerName: document.customer?.name || 'Kunde',
+        documentType: levelName,
         invoiceNumber: document.number,
-        amount: formatCurrency(totalAmount),
-        dueDate: formatDate(document.due_date),
-        daysOverdue,
-        level: currentLevel,
-        companyName: profile?.company_name || 'RechnungsBlitz',
-        bankName: profile?.bank_name,
-        iban: profile?.iban,
-        bic: profile?.bic,
       }),
       attachments,
     });
@@ -161,7 +132,7 @@ export async function POST(
       }, { status: 500 });
     }
 
-    console.log('Email sent successfully:', emailData?.id, 'with PDF:', !!pdfBuffer);
+    console.log('Email sent successfully:', emailData?.id, 'with PDF:', !!pdfBuffer, 'PDF size:', pdfBuffer?.length || 0);
 
     // Update document status
     const updates: Record<string, unknown> = {};
