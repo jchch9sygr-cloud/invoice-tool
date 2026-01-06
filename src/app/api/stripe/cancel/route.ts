@@ -57,30 +57,44 @@ export async function POST() {
     console.log('current_period_end:', stripeSubscription.current_period_end);
     console.log('==================================');
 
-    // Only update if not already cancelled
+    // Get current period end BEFORE any updates
+    let periodEnd: string | null = null;
+    const currentPeriodEndTimestamp = stripeSubscription.current_period_end;
+
+    if (currentPeriodEndTimestamp) {
+      periodEnd = new Date(currentPeriodEndTimestamp * 1000).toISOString();
+      console.log('Period end from Stripe:', periodEnd);
+    } else {
+      console.error('WARNING: No current_period_end from Stripe!');
+      // Fallback: Berechne basierend auf Plan
+      const now = new Date();
+      if (subscription.plan === 'monthly') {
+        now.setMonth(now.getMonth() + 1);
+      } else if (subscription.plan === 'yearly') {
+        now.setFullYear(now.getFullYear() + 1);
+      }
+      periodEnd = now.toISOString();
+      console.log('Calculated fallback period end:', periodEnd);
+    }
+
+    // Only update Stripe if not already cancelled
     if (stripeSubscription.status === 'active' && !stripeSubscription.cancel_at_period_end) {
       await stripe.subscriptions.update(
         subscription.stripe_subscription_id,
         { cancel_at_period_end: true }
       );
-      console.log('Subscription cancelled successfully');
+      console.log('Stripe subscription cancelled successfully');
     } else {
-      console.log('Subscription already cancelled or not active, skipping update');
-    }
-
-    // Get current period end from the subscription
-    let periodEnd: string | null = null;
-    if (stripeSubscription.current_period_end) {
-      periodEnd = new Date(stripeSubscription.current_period_end * 1000).toISOString();
-      console.log('Parsed periodEnd:', periodEnd);
+      console.log('Subscription already cancelled or not active, skipping Stripe update');
     }
 
     // Update database using admin client (bypasses RLS)
+    // ALWAYS set current_period_end, not conditionally
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         cancel_at_period_end: true,
-        ...(periodEnd && { current_period_end: periodEnd }),
+        current_period_end: periodEnd,
       })
       .eq('user_id', user.id);
 
