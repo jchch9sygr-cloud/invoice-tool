@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, FileCheck, Users, Plus, Sparkles, ArrowRight, Settings, Search, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { FileText, FileCheck, Users, Plus, Sparkles, ArrowRight, Settings, AlertTriangle, CheckCircle2, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import { OverdueNotification } from '@/components/dashboard/overdue-notification';
@@ -27,7 +27,7 @@ export default async function DashboardPage() {
     supabase.from('documents').select('*', { count: 'exact', head: true }).eq('type', 'quote'),
     supabase
       .from('documents')
-      .select('*, customer:customers(name)')
+      .select('*, customer:customers(name), reminder_count, due_date')
       .order('created_at', { ascending: false })
       .limit(5),
     supabase.from('subscriptions').select('*').eq('user_id', user?.id).single(),
@@ -43,6 +43,29 @@ export default async function DashboardPage() {
   const isNewUser = (customersCount || 0) === 0 && (invoicesCount || 0) === 0;
   const { data: profile } = await supabase.from('profiles').select('company_name').eq('user_id', user?.id).single();
   const hasCompanySetup = !!profile?.company_name;
+
+  // Helper für Mahnstatus
+  const getReminderStatus = (doc: { type: string; status: string; reminder_count?: number; due_date?: string | null }) => {
+    if (doc.type !== 'invoice') return null;
+    if (doc.status === 'paid' || doc.status === 'cancelled') return null;
+
+    const reminderCount = doc.reminder_count || 0;
+    if (reminderCount === 0) {
+      if (doc.due_date) {
+        const dueDate = new Date(doc.due_date);
+        const today = new Date();
+        if (today > dueDate) {
+          const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+          return { label: `${daysOverdue}d überfällig`, color: 'bg-yellow-900/50 text-yellow-400', icon: AlertTriangle };
+        }
+      }
+      return null;
+    }
+
+    const labels = ['Erinnerung', '1. Mahnung', '2. Mahnung', 'Letzte Mahnung'];
+    const colors = ['bg-cyan-900/50 text-cyan-400', 'bg-yellow-900/50 text-yellow-400', 'bg-orange-900/50 text-orange-400', 'bg-red-900/50 text-red-400'];
+    return { label: labels[Math.min(reminderCount - 1, 3)], color: colors[Math.min(reminderCount - 1, 3)], icon: Mail };
+  };
 
   return (
     <div>
@@ -193,41 +216,52 @@ export default async function DashboardPage() {
           <CardContent className="px-4 sm:px-6">
             {recentDocuments && recentDocuments.length > 0 ? (
               <div className="divide-y divide-gray-800 -mx-4 sm:-mx-6">
-                {recentDocuments.map((doc) => (
-                  <Link
-                    key={doc.id}
-                    href={`/${doc.type === 'invoice' ? 'invoices' : 'quotes'}/${doc.id}`}
-                    className="flex items-center justify-between py-3 px-4 sm:px-6 hover:bg-gray-800/50 transition-colors active:bg-gray-800"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {doc.type === 'invoice' ? (
-                        <FileText className="h-5 w-5 text-blue-500 shrink-0" />
-                      ) : (
-                        <FileCheck className="h-5 w-5 text-green-500 shrink-0" />
-                      )}
-                      <div className="min-w-0">
-                        <p className="font-medium text-white text-sm sm:text-base truncate">{doc.number}</p>
-                        <p className="text-sm text-gray-400 truncate">
-                          {doc.customer?.name || 'Kein Kunde'}
-                        </p>
+                {recentDocuments.map((doc) => {
+                  const reminderStatus = getReminderStatus(doc);
+                  return (
+                    <Link
+                      key={doc.id}
+                      href={`/${doc.type === 'invoice' ? 'invoices' : 'quotes'}/${doc.id}`}
+                      className="flex items-center justify-between py-3 px-4 sm:px-6 hover:bg-gray-800/50 transition-colors active:bg-gray-800"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {doc.type === 'invoice' ? (
+                          <FileText className="h-5 w-5 text-blue-500 shrink-0" />
+                        ) : (
+                          <FileCheck className="h-5 w-5 text-green-500 shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-white text-sm sm:text-base truncate">{doc.number}</p>
+                            {reminderStatus && (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${reminderStatus.color}`}>
+                                <reminderStatus.icon className="h-3 w-3" />
+                                {reminderStatus.label}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-400 truncate">
+                            {doc.customer?.name || 'Kein Kunde'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right shrink-0 ml-2">
-                      <p className="text-xs sm:text-sm text-gray-500">{formatDate(doc.date)}</p>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                          doc.status === 'paid'
-                            ? 'bg-green-900/50 text-green-400'
-                            : doc.status === 'sent'
-                            ? 'bg-blue-900/50 text-blue-400'
-                            : 'bg-gray-700 text-gray-300'
-                        }`}
-                      >
-                        {doc.status === 'draft' ? 'Entwurf' : doc.status === 'sent' ? 'Gesendet' : doc.status === 'paid' ? 'Bezahlt' : 'Storniert'}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
+                      <div className="text-right shrink-0 ml-2">
+                        <p className="text-xs sm:text-sm text-gray-500">{formatDate(doc.date)}</p>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                            doc.status === 'paid'
+                              ? 'bg-green-900/50 text-green-400'
+                              : doc.status === 'sent'
+                              ? 'bg-blue-900/50 text-blue-400'
+                              : 'bg-gray-700 text-gray-300'
+                          }`}
+                        >
+                          {doc.status === 'draft' ? 'Entwurf' : doc.status === 'sent' ? 'Gesendet' : doc.status === 'paid' ? 'Bezahlt' : 'Storniert'}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-10">

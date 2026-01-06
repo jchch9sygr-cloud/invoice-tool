@@ -4,12 +4,14 @@ interface SimpleReminderEmailProps {
   customerName: string;
   documentType: string; // "Zahlungserinnerung" oder "1. Mahnung" etc.
   invoiceNumber: string;
+  companyName?: string;
 }
 
 export function SimpleReminderEmail({
   customerName,
   documentType,
   invoiceNumber,
+  companyName = 'RechnungsBlitz',
 }: SimpleReminderEmailProps) {
   // Anrede bestimmen
   const getSalutation = () => {
@@ -40,12 +42,12 @@ export function SimpleReminderEmail({
         Mit freundlichen Grüßen
       </p>
       <p style={{ fontWeight: 'bold' }}>
-        RechnungsBlitz
+        {companyName}
       </p>
 
       <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '30px 0 15px' }} />
       <p style={{ fontSize: '11px', color: '#999' }}>
-        Diese E-Mail wurde automatisch versendet.
+        Diese E-Mail wurde automatisch über RechnungsBlitz versendet.
       </p>
     </div>
   );

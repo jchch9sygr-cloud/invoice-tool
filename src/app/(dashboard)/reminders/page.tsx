@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { DocumentPreview } from '@/components/documents/document-preview';
-import { Search, FileWarning, Download, AlertTriangle, Pencil, FileText, Eye } from 'lucide-react';
+import { Search, FileWarning, Download, AlertTriangle, Pencil, FileText, Eye, Send, Mail, Info } from 'lucide-react';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -117,6 +118,10 @@ export default function RemindersPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailAddress, setEmailAddress] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     loadOverdueInvoices();
@@ -248,6 +253,44 @@ export default function RemindersPage() {
       }
     } catch (error) {
       console.error('Failed to mark reminder as sent:', error);
+    }
+  };
+
+  const handleOpenEmailModal = () => {
+    if (!selectedInvoice) return;
+    setEmailAddress(selectedInvoice.customer?.email || '');
+    setEmailSent(false);
+    setShowEmailModal(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (!selectedInvoice || !emailAddress) return;
+
+    setSendingEmail(true);
+    try {
+      const response = await fetch(`/api/documents/${selectedInvoice.id}/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailAddress,
+          type: 'reminder',
+          level: reminderLevel,
+        }),
+      });
+
+      if (response.ok) {
+        setEmailSent(true);
+        await loadOverdueInvoices();
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setEmailSent(false);
+          setSelectedInvoice(null);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -455,10 +498,38 @@ export default function RemindersPage() {
                     </div>
                   )}
 
+                  {/* Hinweis bei bisherigen Mahnungen */}
+                  {selectedInvoice.reminder_count > 0 && (
+                    <div className="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 text-gray-400" />
+                        <span className="text-gray-400">Bisher gesendet:</span>
+                        <span className={`font-medium ${getReminderLevelColor(selectedInvoice.reminder_count - 1)}`}>
+                          {getReminderLevelLabel(selectedInvoice.reminder_count - 1)}
+                        </span>
+                      </div>
+                      {reminderLevel < selectedInvoice.reminder_count && (
+                        <p className="text-xs text-yellow-400 mt-2 flex items-center gap-1">
+                          <Info className="h-3 w-3" />
+                          Du wählst eine niedrigere Stufe als bereits gesendet
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="flex flex-col gap-2 pt-2">
+                    {/* Per E-Mail senden - Hauptaktion */}
+                    <Button
+                      onClick={handleOpenEmailModal}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      {getReminderLevelLabel(reminderLevel)} per E-Mail senden
+                    </Button>
+
                     <div className="flex gap-2">
-                      <Button onClick={handleDownloadReminder} className="flex-1">
+                      <Button onClick={handleDownloadReminder} variant="outline" className="flex-1">
                         <Download className="h-4 w-4 mr-2" />
                         PDF
                       </Button>
@@ -476,11 +547,11 @@ export default function RemindersPage() {
                       Vorschau
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       onClick={handleMarkAsSent}
-                      className="w-full"
+                      className="w-full text-gray-400"
                     >
-                      Als gesendet markieren
+                      Nur als gesendet markieren
                     </Button>
                   </div>
 
@@ -750,6 +821,81 @@ export default function RemindersPage() {
             </div>
           </div>
         )}
+
+        {/* E-Mail Modal */}
+        <Modal isOpen={showEmailModal} onClose={() => setShowEmailModal(false)}>
+          <ModalHeader>
+            <h3 className="text-xl font-semibold text-white">
+              {getReminderLevelLabel(reminderLevel)} per E-Mail senden
+            </h3>
+          </ModalHeader>
+          <ModalBody>
+            {selectedInvoice && (
+              <div className="space-y-4">
+                {/* Info */}
+                <div className="p-4 bg-gray-800 rounded-xl">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs text-gray-400">Rechnung</p>
+                      <p className="font-semibold text-white">{selectedInvoice.number}</p>
+                      <p className="text-sm text-gray-300">{selectedInvoice.customer?.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">Stufe</p>
+                      <p className={`font-semibold ${getReminderLevelColor(reminderLevel)}`}>
+                        {getReminderLevelLabel(reminderLevel)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* E-Mail-Adresse */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    E-Mail-Adresse
+                  </label>
+                  <Input
+                    type="email"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                    placeholder="kunde@beispiel.de"
+                  />
+                </div>
+
+                {/* Erfolg */}
+                {emailSent && (
+                  <div className="p-3 bg-green-900/30 border border-green-800 rounded-lg">
+                    <p className="text-green-400 text-sm flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      {getReminderLevelLabel(reminderLevel)} wurde erfolgreich gesendet!
+                    </p>
+                  </div>
+                )}
+
+                {/* Info über den Anhang */}
+                <div className="p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
+                  <p className="text-sm text-blue-300">
+                    <Info className="h-4 w-4 inline mr-1" />
+                    Die {getReminderLevelLabel(reminderLevel)} wird als PDF-Anhang mitgeschickt.
+                  </p>
+                </div>
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" onClick={() => setShowEmailModal(false)}>
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSendEmail}
+              loading={sendingEmail}
+              disabled={!emailAddress || emailSent}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              {emailSent ? 'Gesendet!' : 'Jetzt senden'}
+            </Button>
+          </ModalFooter>
+        </Modal>
       </div>
     </div>
   );

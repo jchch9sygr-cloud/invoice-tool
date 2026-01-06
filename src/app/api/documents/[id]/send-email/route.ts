@@ -111,16 +111,22 @@ export async function POST(
       }
     ] : [];
 
+    // Absender: Firmenname des Benutzers, Reply-To auf Benutzer-E-Mail
+    const senderName = profile?.company_name || 'RechnungsBlitz';
+    const replyToEmail = profile?.email || undefined;
+
     // Send email using Resend with simple template
     const resend = getResend();
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: `${senderName} <${FROM_EMAIL.split('<')[1]?.replace('>', '') || 'noreply@resend.dev'}>`,
+      replyTo: replyToEmail,
       to: email,
       subject,
       react: createElement(SimpleReminderEmail, {
         customerName: document.customer?.name || 'Kunde',
         documentType: levelName,
         invoiceNumber: document.number,
+        companyName: senderName,
       }),
       attachments,
     });

@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/layout/page-header';
 import { Button } from '@/components/ui/button';
-import { Download, ArrowLeft, Lock, FileText } from 'lucide-react';
+import { Download, ArrowLeft, Lock, FileText, Mail, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { formatCurrency, formatDate, calculateTotal, calculateVat, calculateGrossTotal, getKleinunternehmerText } from '@/lib/utils';
@@ -110,6 +110,46 @@ export default async function InvoiceDetailPage({
             <span className="text-blue-400 font-medium">Gesendet</span>
           </div>
         )}
+
+        {/* Mahnstatus */}
+        {document.status !== 'paid' && document.status !== 'cancelled' && (() => {
+          const reminderCount = document.reminder_count || 0;
+          const dueDate = document.due_date ? new Date(document.due_date) : null;
+          const today = new Date();
+          const isOverdue = dueDate && today > dueDate;
+          const daysOverdue = dueDate ? Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
+          if (reminderCount > 0) {
+            const labels = ['Zahlungserinnerung', '1. Mahnung', '2. Mahnung', 'Letzte Mahnung'];
+            const colors = ['bg-cyan-900/30 border-cyan-700 text-cyan-400', 'bg-yellow-900/30 border-yellow-700 text-yellow-400', 'bg-orange-900/30 border-orange-700 text-orange-400', 'bg-red-900/30 border-red-700 text-red-400'];
+            const label = labels[Math.min(reminderCount - 1, 3)];
+            const color = colors[Math.min(reminderCount - 1, 3)];
+
+            return (
+              <div className={`mb-4 flex items-center gap-2 rounded-xl px-4 py-3 border ${color}`}>
+                <Mail className="h-4 w-4" />
+                <span className="font-medium">{label} gesendet</span>
+                {document.last_reminder_date && (
+                  <span className="opacity-70 text-sm">am {formatDate(document.last_reminder_date)}</span>
+                )}
+                <Link href="/reminders" className="ml-auto text-sm underline opacity-80 hover:opacity-100">
+                  Mahnwesen
+                </Link>
+              </div>
+            );
+          } else if (isOverdue) {
+            return (
+              <div className="mb-4 flex items-center gap-2 bg-yellow-900/30 border border-yellow-700 rounded-xl px-4 py-3 text-yellow-400">
+                <AlertTriangle className="h-4 w-4" />
+                <span className="font-medium">{daysOverdue} Tage überfällig</span>
+                <Link href="/reminders" className="ml-auto text-sm underline opacity-80 hover:opacity-100">
+                  Zahlungserinnerung senden
+                </Link>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* Vorschau im DIN 5008 Stil - wie PDF */}
         <DocumentPreview>

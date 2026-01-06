@@ -3,15 +3,17 @@
 import { Document, LineItem } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, FileCheck, Download, Trash2, Eye, MoreVertical, Loader2, Settings } from 'lucide-react';
+import { FileText, FileCheck, Download, Trash2, Eye, MoreVertical, Loader2, Settings, AlertTriangle, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDate, calculateTotal } from '@/lib/utils';
 import { useState, useRef, useEffect } from 'react';
 
-interface DocumentWithRelations extends Omit<Document, 'customer'> {
+interface DocumentWithRelations extends Omit<Document, 'customer' | 'reminder_count' | 'due_date'> {
   customer?: { name: string } | null;
   line_items?: LineItem[];
+  reminder_count?: number | null;
+  due_date?: string | null;
 }
 
 interface DocumentListProps {
@@ -169,6 +171,48 @@ export function DocumentList({ documents, type }: DocumentListProps) {
     );
   };
 
+  // Mahnstatus Badge
+  const getReminderBadge = (doc: DocumentWithRelations) => {
+    if (type !== 'invoice') return null;
+    if (doc.status === 'paid' || doc.status === 'cancelled') return null;
+
+    const reminderCount = doc.reminder_count || 0;
+    if (reminderCount === 0) {
+      // Prüfen ob überfällig
+      if (doc.due_date) {
+        const dueDate = new Date(doc.due_date);
+        const today = new Date();
+        if (today > dueDate) {
+          const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+          return (
+            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-900/50 text-yellow-400 px-2 py-0.5 text-xs font-medium">
+              <AlertTriangle className="h-3 w-3" />
+              {daysOverdue}d überfällig
+            </span>
+          );
+        }
+      }
+      return null;
+    }
+
+    const reminderLabels = ['Erinnerung', '1. Mahnung', '2. Mahnung', 'Letzte Mahnung'];
+    const label = reminderLabels[Math.min(reminderCount - 1, 3)];
+    const colors = [
+      'bg-cyan-900/50 text-cyan-400',
+      'bg-yellow-900/50 text-yellow-400',
+      'bg-orange-900/50 text-orange-400',
+      'bg-red-900/50 text-red-400',
+    ];
+    const color = colors[Math.min(reminderCount - 1, 3)];
+
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${color}`}>
+        <Mail className="h-3 w-3" />
+        {label}
+      </span>
+    );
+  };
+
   return (
     <div className="space-y-3">
       {documents.map((doc) => {
@@ -193,6 +237,7 @@ export function DocumentList({ documents, type }: DocumentListProps) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-medium text-white text-sm sm:text-base">{doc.number}</h3>
                       {getStatusBadge(doc.status)}
+                      {getReminderBadge(doc)}
                     </div>
                     {/* Customer + Date */}
                     <p className="text-sm text-gray-400 mt-0.5 truncate">
