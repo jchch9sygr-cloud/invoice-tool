@@ -10,6 +10,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { UpgradeButton } from '@/components/pricing/upgrade-button';
 import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle, RefreshCw, Calendar, CreditCard, Lightbulb, HelpCircle } from 'lucide-react';
 import { HelpPanel, settingsHelp } from '@/components/ui/help-panel';
+import { WorkflowGuide } from '@/components/ui/workflow-guide';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
 import type { Profile, Subscription } from '@/types/database';
 
@@ -936,6 +937,9 @@ export default function SettingsPage() {
           {/* Help Panel - Sidebar */}
           <div className="lg:w-80 shrink-0">
             <div className="lg:sticky lg:top-20 space-y-4">
+              {/* Workflow Guide - App-Ablauf */}
+              <WorkflowGuide />
+
               {/* Firmendaten Hilfe */}
               <HelpPanel
                 tips={settingsHelp.company}
