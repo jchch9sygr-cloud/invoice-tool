@@ -1,6 +1,6 @@
 'use client';
 
-import { Settings, Users, FileText, Mail, CheckCircle2, AlertTriangle, Clock, Bell } from 'lucide-react';
+import { Settings, Users, FileText, Mail, CheckCircle2, AlertTriangle, Clock } from 'lucide-react';
 
 interface WorkflowStep {
   icon: React.ElementType;
@@ -71,7 +71,7 @@ export function WorkflowGuide() {
         <div className="p-2 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg">
           <FileText className="h-5 w-5 text-blue-400" />
         </div>
-        <h3 className="font-semibold text-white">So funktioniert's</h3>
+        <h3 className="font-semibold text-white">So funktionierts</h3>
       </div>
 
       <div className="space-y-1">

@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
-  Zap, Check, ArrowRight, FileText, Users, Download, Clock, Shield,
+  Zap, Check, ArrowRight, FileText, Users, Download, Shield,
   Sparkles, Menu, X, FileDown, Edit3, Search, CreditCard, AlertTriangle,
-  RefreshCw, Mail, ChevronRight, Play, CheckCircle2, HelpCircle,
-  Building2, Receipt, Bell, Send, Eye, Lock
+  RefreshCw, Mail, ChevronRight, Play, Bell, Send, Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -32,7 +31,7 @@ export default function LandingPage() {
                 Funktionen
               </a>
               <a href="#so-gehts" className="text-sm text-gray-400 hover:text-white transition-colors">
-                So geht's
+                So gehts
               </a>
               <a href="#pricing" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Preise
@@ -65,7 +64,7 @@ export default function LandingPage() {
                 Funktionen
               </a>
               <a href="#so-gehts" className="block py-2 text-gray-300" onClick={() => setMobileMenuOpen(false)}>
-                So geht's
+                So gehts
               </a>
               <a href="#pricing" className="block py-2 text-gray-300" onClick={() => setMobileMenuOpen(false)}>
                 Preise
@@ -121,7 +120,7 @@ export default function LandingPage() {
             <a href="#so-gehts">
               <Button variant="outline" size="lg" className="w-full sm:w-auto text-lg px-8 h-14 gap-2">
                 <Play className="h-5 w-5" />
-                So funktioniert's
+                So funktionierts
               </Button>
             </a>
           </div>
@@ -190,163 +189,62 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* So geht's - Schritt für Schritt */}
-      <section className="py-16 sm:py-24 px-4" id="so-gehts">
+      {/* So geht's - Einfach erklärt */}
+      <section className="py-16 sm:py-20 px-4" id="so-gehts">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="inline-block px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-blue-400 text-sm mb-4">
-              Schritt für Schritt
-            </span>
+          <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
-              In 5 Minuten zur ersten Rechnung
+              So einfach gehts
             </h2>
-            <p className="text-gray-400 max-w-xl mx-auto">
-              Keine komplizierte Einrichtung. Folge einfach diesen Schritten.
+            <p className="text-gray-400">
+              In drei Schritten zur fertigen Rechnung
             </p>
           </div>
 
-          <div className="space-y-8">
-            {/* Schritt 1 */}
-            <div className="relative flex gap-6 items-start">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0">
-                  1
-                </div>
-                <div className="w-0.5 h-full bg-gray-700 mt-4" />
-              </div>
-              <div className="flex-1 pb-12">
-                <h3 className="text-xl font-semibold text-white mb-2">Konto erstellen & Firmendaten eingeben</h3>
-                <p className="text-gray-400 mb-4">
-                  Nach der kostenlosen Registrierung gibst du einmalig deine Firmendaten ein:
-                  Name, Adresse, Steuernummer und Bankverbindung. Diese erscheinen automatisch auf allen Dokumenten.
-                </p>
-                <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-                  <div className="flex items-center gap-3 text-sm">
-                    <Building2 className="h-5 w-5 text-blue-400 shrink-0" />
-                    <span className="text-gray-300">
-                      <strong className="text-white">Tipp:</strong> Bist du Kleinunternehmer?
-                      Aktiviere den Schalter in den Einstellungen – der §19-Hinweis erscheint dann automatisch.
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Schritt 2 */}
-            <div className="relative flex gap-6 items-start">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0">
-                  2
-                </div>
-                <div className="w-0.5 h-full bg-gray-700 mt-4" />
-              </div>
-              <div className="flex-1 pb-12">
-                <h3 className="text-xl font-semibold text-white mb-2">Kunden anlegen</h3>
-                <p className="text-gray-400 mb-4">
-                  Lege deine Kunden mit Name, Adresse und E-Mail an. Bei jeder neuen Rechnung wählst du
-                  einfach den Kunden aus der Liste – alle Daten werden automatisch übernommen.
-                </p>
-                <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-                  <div className="flex items-center gap-3 text-sm">
-                    <Users className="h-5 w-5 text-green-400 shrink-0" />
-                    <span className="text-gray-300">
-                      <strong className="text-white">Tipp:</strong> Verwende "Herr" oder "Frau" im Namen
-                      für die korrekte Anrede in E-Mails.
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Schritt 3 */}
-            <div className="relative flex gap-6 items-start">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0">
-                  3
-                </div>
-                <div className="w-0.5 h-full bg-gray-700 mt-4" />
-              </div>
-              <div className="flex-1 pb-12">
-                <h3 className="text-xl font-semibold text-white mb-2">Rechnung oder Angebot erstellen</h3>
-                <p className="text-gray-400 mb-4">
-                  Wähle Kunde, füge Positionen hinzu (Beschreibung + Betrag), setze das Fälligkeitsdatum.
-                  Die Rechnungsnummer wird automatisch vergeben und die MwSt. berechnet.
-                </p>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-                    <div className="flex items-center gap-3 text-sm">
-                      <Receipt className="h-5 w-5 text-blue-400 shrink-0" />
-                      <span className="text-gray-300">
-                        <strong className="text-white">Rechnung:</strong> Für erbrachte Leistungen
-                      </span>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                step: '1',
+                icon: Users,
+                title: 'Kunde wählen',
+                desc: 'Wähle einen bestehenden Kunden oder lege einen neuen an.',
+                color: 'blue',
+              },
+              {
+                step: '2',
+                icon: FileText,
+                title: 'Rechnung ausfüllen',
+                desc: 'Positionen eintragen – MwSt. wird automatisch berechnet.',
+                color: 'purple',
+              },
+              {
+                step: '3',
+                icon: Download,
+                title: 'Exportieren',
+                desc: 'Als PDF oder Word herunterladen. Fertig!',
+                color: 'green',
+              },
+            ].map((item, i) => (
+              <div key={i} className="relative group">
+                <div className="absolute -inset-px bg-gradient-to-b from-blue-500/20 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative p-6 bg-gray-900/50 border border-gray-800 rounded-2xl h-full hover:border-gray-700 transition-colors">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      item.color === 'blue' ? 'bg-blue-500/10' :
+                      item.color === 'purple' ? 'bg-purple-500/10' : 'bg-green-500/10'
+                    }`}>
+                      <item.icon className={`h-6 w-6 ${
+                        item.color === 'blue' ? 'text-blue-400' :
+                        item.color === 'purple' ? 'text-purple-400' : 'text-green-400'
+                      }`} />
                     </div>
+                    <span className="text-4xl font-bold text-gray-800">{item.step}</span>
                   </div>
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-                    <div className="flex items-center gap-3 text-sm">
-                      <FileText className="h-5 w-5 text-green-400 shrink-0" />
-                      <span className="text-gray-300">
-                        <strong className="text-white">Angebot:</strong> Kann später zur Rechnung werden
-                      </span>
-                    </div>
-                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                  <p className="text-gray-400">{item.desc}</p>
                 </div>
               </div>
-            </div>
-
-            {/* Schritt 4 */}
-            <div className="relative flex gap-6 items-start">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0">
-                  4
-                </div>
-                <div className="w-0.5 h-full bg-gray-700 mt-4" />
-              </div>
-              <div className="flex-1 pb-12">
-                <h3 className="text-xl font-semibold text-white mb-2">Exportieren & Versenden</h3>
-                <p className="text-gray-400 mb-4">
-                  Lade deine Rechnung als PDF oder Word-Datei herunter.
-                  Versende sie per E-Mail an deinen Kunden – direkt aus der App.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <FileDown className="h-4 w-4 text-red-400" />
-                    <span className="text-sm text-red-300">PDF</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                    <FileText className="h-4 w-4 text-blue-400" />
-                    <span className="text-sm text-blue-300">Word</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
-                    <Mail className="h-4 w-4 text-green-400" />
-                    <span className="text-sm text-green-300">E-Mail</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Schritt 5 */}
-            <div className="relative flex gap-6 items-start">
-              <div className="flex flex-col items-center">
-                <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center text-white shrink-0">
-                  <Check className="h-6 w-6" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-semibold text-white mb-2">Als bezahlt markieren</h3>
-                <p className="text-gray-400 mb-4">
-                  Wenn der Kunde gezahlt hat, markiere die Rechnung als "bezahlt".
-                  Sie wird dann gesperrt und kann nicht mehr versehentlich geändert werden.
-                </p>
-                <div className="bg-green-900/20 border border-green-700/50 rounded-xl p-4">
-                  <div className="flex items-center gap-3 text-sm">
-                    <Lock className="h-5 w-5 text-green-400 shrink-0" />
-                    <span className="text-gray-300">
-                      Bezahlte Rechnungen werden für deine Buchhaltung archiviert und sind vor Änderungen geschützt.
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>

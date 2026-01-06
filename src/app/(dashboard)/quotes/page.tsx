@@ -15,6 +15,7 @@ export default async function QuotesPage() {
     .from('documents')
     .select('*, customer:customers(name), line_items(*)')
     .eq('type', 'quote')
+    .or('is_archived.is.null,is_archived.eq.false')
     .order('created_at', { ascending: false });
 
   return (

@@ -3,7 +3,7 @@
 import { Document, LineItem } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, FileCheck, Download, Trash2, Eye, MoreVertical, Loader2, Settings, AlertTriangle, Mail } from 'lucide-react';
+import { FileText, FileCheck, Download, MoreVertical, Loader2, Settings, AlertTriangle, Mail, Archive } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDate, calculateTotal } from '@/lib/utils';
@@ -56,14 +56,6 @@ function ActionMenu({
       {isOpen && (
         <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-xl border border-gray-700 bg-gray-800 py-1 shadow-xl sm:hidden">
           <Link
-            href={`${basePath}/${docId}`}
-            className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-gray-700"
-            onClick={() => setIsOpen(false)}
-          >
-            <Eye className="h-4 w-4" />
-            Anzeigen
-          </Link>
-          <Link
             href={`${basePath}/${docId}/pdf`}
             className="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-gray-700"
             onClick={() => setIsOpen(false)}
@@ -76,23 +68,18 @@ function ActionMenu({
               setIsOpen(false);
               onDelete();
             }}
-            className="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-gray-700"
+            className="flex w-full items-center gap-3 px-4 py-3 text-sm text-orange-400 hover:bg-gray-700"
           >
-            <Trash2 className="h-4 w-4" />
-            Löschen
+            <Archive className="h-4 w-4" />
+            Archivieren
           </button>
         </div>
       )}
 
       {/* Desktop Buttons */}
       <div className="hidden items-center gap-1 sm:flex">
-        <Link href={`${basePath}/${docId}`}>
-          <Button variant="ghost" size="sm">
-            <Eye className="h-4 w-4" />
-          </Button>
-        </Link>
-        <Link href={`${basePath}/${docId}/pdf`}>
-          <Button variant="ghost" size="sm">
+        <Link href={`${basePath}/${docId}/pdf`} onClick={(e) => e.stopPropagation()}>
+          <Button variant="ghost" size="sm" title="PDF herunterladen">
             <Download className="h-4 w-4" />
           </Button>
         </Link>
@@ -100,8 +87,9 @@ function ActionMenu({
           variant="ghost"
           size="sm"
           onClick={onDelete}
+          title="Archivieren"
         >
-          <Trash2 className="h-4 w-4 text-red-500" />
+          <Archive className="h-4 w-4 text-orange-500" />
         </Button>
       </div>
     </div>
@@ -219,69 +207,72 @@ export function DocumentList({ documents, type }: DocumentListProps) {
         const total = calculateTotal(doc.line_items || []);
 
         return (
-          <Card key={doc.id} className="hover:border-blue-600/50 transition-colors">
-            <CardContent className="p-4">
-              {/* Mobile Layout: Stacked */}
-              <div className="flex items-start justify-between gap-3">
-                {/* Icon + Info */}
-                <div className="flex items-start gap-3 min-w-0 flex-1">
-                  <div className="shrink-0 mt-0.5">
-                    {type === 'invoice' ? (
-                      <FileText className="h-6 w-6 text-blue-500 sm:h-8 sm:w-8" />
-                    ) : (
-                      <FileCheck className="h-6 w-6 text-green-500 sm:h-8 sm:w-8" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    {/* Number + Badge */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium text-white text-sm sm:text-base">{doc.number}</h3>
-                      {getStatusBadge(doc.status)}
-                      {getReminderBadge(doc)}
+          <Link key={doc.id} href={`${basePath}/${doc.id}`} className="block">
+            <Card className="hover:border-blue-600/50 transition-colors cursor-pointer active:scale-[0.99]">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  {/* Icon + Info */}
+                  <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="shrink-0 mt-0.5">
+                      {type === 'invoice' ? (
+                        <FileText className="h-6 w-6 text-blue-500 sm:h-8 sm:w-8" />
+                      ) : (
+                        <FileCheck className="h-6 w-6 text-green-500 sm:h-8 sm:w-8" />
+                      )}
                     </div>
-                    {/* Customer + Date */}
-                    <p className="text-sm text-gray-400 mt-0.5 truncate">
-                      {doc.customer?.name || 'Kein Kunde'}
-                    </p>
-                    {/* Mobile: Amount + Date in row */}
-                    <div className="flex items-center justify-between mt-2 sm:hidden">
-                      <span className="text-base font-semibold text-white">
-                        {formatCurrency(total)}
-                      </span>
-                      <span className="text-xs text-gray-500">
+                    <div className="min-w-0 flex-1">
+                      {/* Number + Badge */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium text-white text-sm sm:text-base">{doc.number}</h3>
+                        {getStatusBadge(doc.status)}
+                        {getReminderBadge(doc)}
+                      </div>
+                      {/* Customer + Date */}
+                      <p className="text-sm text-gray-400 mt-0.5 truncate">
+                        {doc.customer?.name || 'Kein Kunde'}
+                      </p>
+                      {/* Mobile: Amount + Date in row */}
+                      <div className="flex items-center justify-between mt-2 sm:hidden">
+                        <span className="text-base font-semibold text-white">
+                          {formatCurrency(total)}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(doc.date)}
+                        </span>
+                      </div>
+                      {/* Desktop: Date */}
+                      <p className="text-sm text-gray-500 hidden sm:block">
                         {formatDate(doc.date)}
-                      </span>
+                      </p>
                     </div>
-                    {/* Desktop: Date */}
-                    <p className="text-sm text-gray-500 hidden sm:block">
-                      {formatDate(doc.date)}
+                  </div>
+
+                  {/* Desktop: Amount + Actions */}
+                  <div className="hidden sm:flex items-center gap-4">
+                    <p className="text-lg font-semibold text-white whitespace-nowrap">
+                      {formatCurrency(total)}
                     </p>
+                    <div onClick={(e) => e.preventDefault()}>
+                      <ActionMenu
+                        docId={doc.id}
+                        basePath={basePath}
+                        onDelete={() => setDeleteDoc(doc)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mobile: Action Menu */}
+                  <div className="sm:hidden" onClick={(e) => e.preventDefault()}>
+                    <ActionMenu
+                      docId={doc.id}
+                      basePath={basePath}
+                      onDelete={() => setDeleteDoc(doc)}
+                    />
                   </div>
                 </div>
-
-                {/* Desktop: Amount + Actions */}
-                <div className="hidden sm:flex items-center gap-4">
-                  <p className="text-lg font-semibold text-white whitespace-nowrap">
-                    {formatCurrency(total)}
-                  </p>
-                  <ActionMenu
-                    docId={doc.id}
-                    basePath={basePath}
-                    onDelete={() => setDeleteDoc(doc)}
-                  />
-                </div>
-
-                {/* Mobile: Action Menu */}
-                <div className="sm:hidden">
-                  <ActionMenu
-                    docId={doc.id}
-                    basePath={basePath}
-                    onDelete={() => setDeleteDoc(doc)}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </Link>
         );
       })}
 
@@ -298,13 +289,14 @@ export function DocumentList({ documents, type }: DocumentListProps) {
             }}
           />
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-gray-800 border border-gray-700 rounded-xl shadow-xl p-6 w-[90%] max-w-md">
-            <h3 className="text-lg font-semibold text-white mb-2">
-              {type === 'invoice' ? 'Rechnung' : 'Angebot'} löschen?
+            <h3 className="text-lg font-semibold text-white mb-2 flex items-center gap-2">
+              <Archive className="h-5 w-5 text-orange-400" />
+              {type === 'invoice' ? 'Rechnung' : 'Angebot'} archivieren?
             </h3>
             <p className="text-gray-400 text-sm mb-4">
               Möchtest du {type === 'invoice' ? 'die Rechnung' : 'das Angebot'}{' '}
-              <strong className="text-white">{deleteDoc.number}</strong> wirklich löschen?
-              Diese Aktion kann nicht rückgängig gemacht werden.
+              <strong className="text-white">{deleteDoc.number}</strong> ins Archiv verschieben?
+              Du kannst es dort wiederherstellen oder endgültig löschen.
             </p>
 
             {deleteError && (
@@ -339,17 +331,17 @@ export function DocumentList({ documents, type }: DocumentListProps) {
                 Abbrechen
               </Button>
               <Button
-                variant="danger"
                 size="sm"
                 onClick={handleDelete}
                 disabled={isDeleting}
+                className="bg-orange-600 hover:bg-orange-700"
               >
                 {isDeleting ? (
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Archive className="h-4 w-4 mr-1" />
                 )}
-                Endgültig löschen
+                Archivieren
               </Button>
             </div>
           </div>

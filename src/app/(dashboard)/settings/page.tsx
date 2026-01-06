@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
 import { UpgradeButton } from '@/components/pricing/upgrade-button';
-import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle, RefreshCw, Calendar, CreditCard, Lightbulb, HelpCircle, Search } from 'lucide-react';
+import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle, RefreshCw, Calendar, CreditCard, Search, Bell, Info } from 'lucide-react';
 import { HelpPanel, settingsHelp } from '@/components/ui/help-panel';
 import { WorkflowGuide } from '@/components/ui/workflow-guide';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -79,6 +79,10 @@ export default function SettingsPage() {
     bic: '',
     logo_size: 56,
     signature_size: 50,
+    reminder_days_first: 7,
+    reminder_days_second: 14,
+    reminder_days_third: 14,
+    reminder_days_final: 7,
   });
 
   useEffect(() => {
@@ -100,6 +104,10 @@ export default function SettingsPage() {
           ...profileData,
           logo_size: profileData.logo_size || 56,
           signature_size: profileData.signature_size || 50,
+          reminder_days_first: profileData.reminder_days_first ?? 7,
+          reminder_days_second: profileData.reminder_days_second ?? 14,
+          reminder_days_third: profileData.reminder_days_third ?? 14,
+          reminder_days_final: profileData.reminder_days_final ?? 7,
         });
         if (profileData.logo_url) {
           setLogoPreview(profileData.logo_url);
@@ -917,6 +925,130 @@ export default function SettingsPage() {
                   setFormData({ ...formData, allow_paid_invoice_deletion: checked })
                 }
               />
+            </CardContent>
+          </Card>
+
+          {/* Mahnwesen Einstellungen */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5 text-orange-500" />
+                Mahnwesen Einstellungen
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Erklärung */}
+              <div className="bg-blue-900/20 border border-blue-800/50 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Info className="h-5 w-5 text-blue-400 mt-0.5 shrink-0" />
+                  <div className="text-sm text-gray-300 space-y-2">
+                    <p className="font-medium text-blue-400">So funktioniert das Mahnwesen:</p>
+                    <ol className="list-decimal list-inside space-y-1 text-gray-400">
+                      <li><strong className="text-white">Zahlungserinnerung</strong> – freundliche Erinnerung nach Fälligkeit</li>
+                      <li><strong className="text-white">1. Mahnung</strong> – formelle erste Mahnung</li>
+                      <li><strong className="text-white">2. Mahnung</strong> – dringendere Mahnung</li>
+                      <li><strong className="text-white">Letzte Mahnung</strong> – Ankündigung weiterer Schritte</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              {/* Intervall-Einstellungen */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-gray-300">Zeitabstände konfigurieren</h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Tage nach Fälligkeit → Zahlungserinnerung
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        value={formData.reminder_days_first || 7}
+                        onChange={(e) => setFormData({ ...formData, reminder_days_first: parseInt(e.target.value) || 7 })}
+                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                      />
+                      <span className="text-sm text-gray-500">Tage</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Nach Erinnerung → 1. Mahnung
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        value={formData.reminder_days_second || 14}
+                        onChange={(e) => setFormData({ ...formData, reminder_days_second: parseInt(e.target.value) || 14 })}
+                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                      />
+                      <span className="text-sm text-gray-500">Tage</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Nach 1. Mahnung → 2. Mahnung
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        value={formData.reminder_days_third || 14}
+                        onChange={(e) => setFormData({ ...formData, reminder_days_third: parseInt(e.target.value) || 14 })}
+                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                      />
+                      <span className="text-sm text-gray-500">Tage</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">
+                      Nach 2. Mahnung → Letzte Mahnung
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        max="90"
+                        value={formData.reminder_days_final || 7}
+                        onChange={(e) => setFormData({ ...formData, reminder_days_final: parseInt(e.target.value) || 7 })}
+                        className="w-20 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                      />
+                      <span className="text-sm text-gray-500">Tage</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Beispiel-Timeline */}
+                <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                  <p className="text-xs text-gray-500 mb-2">Beispiel bei Fälligkeit am 1. Januar:</p>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <span className="px-2 py-1 bg-cyan-900/50 text-cyan-400 rounded">
+                      {formData.reminder_days_first || 7}. Jan: Erinnerung
+                    </span>
+                    <span className="text-gray-600">→</span>
+                    <span className="px-2 py-1 bg-yellow-900/50 text-yellow-400 rounded">
+                      {(formData.reminder_days_first || 7) + (formData.reminder_days_second || 14)}. Jan: 1. Mahnung
+                    </span>
+                    <span className="text-gray-600">→</span>
+                    <span className="px-2 py-1 bg-orange-900/50 text-orange-400 rounded">
+                      {(formData.reminder_days_first || 7) + (formData.reminder_days_second || 14) + (formData.reminder_days_third || 14)}. Jan: 2. Mahnung
+                    </span>
+                    <span className="text-gray-600">→</span>
+                    <span className="px-2 py-1 bg-red-900/50 text-red-400 rounded">
+                      {(formData.reminder_days_first || 7) + (formData.reminder_days_second || 14) + (formData.reminder_days_third || 14) + (formData.reminder_days_final || 7)}. Jan: Letzte
+                    </span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 

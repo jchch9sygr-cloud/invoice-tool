@@ -122,6 +122,7 @@ export default function RemindersPage() {
   const [emailAddress, setEmailAddress] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   useEffect(() => {
     loadOverdueInvoices();
@@ -260,6 +261,7 @@ export default function RemindersPage() {
     if (!selectedInvoice) return;
     setEmailAddress(selectedInvoice.customer?.email || '');
     setEmailSent(false);
+    setEmailError(null);
     setShowEmailModal(true);
   };
 
@@ -267,6 +269,7 @@ export default function RemindersPage() {
     if (!selectedInvoice || !emailAddress) return;
 
     setSendingEmail(true);
+    setEmailError(null);
     try {
       const response = await fetch(`/api/documents/${selectedInvoice.id}/send-email`, {
         method: 'POST',
@@ -278,6 +281,8 @@ export default function RemindersPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         setEmailSent(true);
         await loadOverdueInvoices();
@@ -286,9 +291,12 @@ export default function RemindersPage() {
           setEmailSent(false);
           setSelectedInvoice(null);
         }, 2000);
+      } else {
+        setEmailError(data.error || 'E-Mail konnte nicht gesendet werden');
       }
     } catch (error) {
       console.error('Error sending email:', error);
+      setEmailError('Netzwerkfehler beim Senden der E-Mail');
     } finally {
       setSendingEmail(false);
     }
@@ -868,6 +876,16 @@ export default function RemindersPage() {
                     <p className="text-green-400 text-sm flex items-center gap-2">
                       <Mail className="h-4 w-4" />
                       {getReminderLevelLabel(reminderLevel)} wurde erfolgreich gesendet!
+                    </p>
+                  </div>
+                )}
+
+                {/* Fehler */}
+                {emailError && (
+                  <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg">
+                    <p className="text-red-400 text-sm flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      {emailError}
                     </p>
                   </div>
                 )}

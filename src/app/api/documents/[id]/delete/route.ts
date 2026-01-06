@@ -44,34 +44,26 @@ export async function DELETE(
       );
     }
 
-    // Delete line items first (foreign key constraint)
-    const { error: lineItemsError } = await supabase
-      .from('line_items')
-      .delete()
-      .eq('document_id', id);
-
-    if (lineItemsError) {
-      console.error('Error deleting line items:', lineItemsError);
-      throw lineItemsError;
-    }
-
-    // Delete the document
-    const { error: deleteError } = await supabase
+    // Archive instead of delete - move to archive
+    const { error: archiveError } = await supabase
       .from('documents')
-      .delete()
+      .update({
+        is_archived: true,
+        archived_at: new Date().toISOString(),
+      })
       .eq('id', id)
       .eq('user_id', user.id);
 
-    if (deleteError) {
-      console.error('Error deleting document:', deleteError);
-      throw deleteError;
+    if (archiveError) {
+      console.error('Error archiving document:', archiveError);
+      throw archiveError;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, archived: true });
   } catch (error) {
-    console.error('Delete document error:', error);
+    console.error('Archive document error:', error);
     return NextResponse.json(
-      { error: 'Fehler beim Löschen' },
+      { error: 'Fehler beim Archivieren' },
       { status: 500 }
     );
   }

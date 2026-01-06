@@ -216,7 +216,7 @@ export function GlobalSearch({ onNavigate }: GlobalSearchProps) {
       {isOpen && results.length === 0 && query.length >= 2 && !isLoading && (
         <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-gray-700 bg-gray-800 shadow-xl p-4 animate-in fade-in slide-in-from-top-2 duration-150">
           <p className="text-sm text-gray-400 text-center">
-            Keine Ergebnisse für "{query}"
+            Keine Ergebnisse für &quot;{query}&quot;
           </p>
         </div>
       )}

@@ -23,6 +23,11 @@ export interface Profile {
   bank_name: string | null;
   iban: string | null;
   bic: string | null;
+  // Mahnwesen Intervalle (in Tagen)
+  reminder_days_first: number | null; // Tage nach Fälligkeit bis Zahlungserinnerung
+  reminder_days_second: number | null; // Tage nach Erinnerung bis 1. Mahnung
+  reminder_days_third: number | null; // Tage nach 1. Mahnung bis 2. Mahnung
+  reminder_days_final: number | null; // Tage nach 2. Mahnung bis letzte Mahnung
   created_at: string;
   updated_at: string;
 }

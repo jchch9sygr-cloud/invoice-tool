@@ -15,6 +15,7 @@ export default async function InvoicesPage() {
     .from('documents')
     .select('*, customer:customers(name), line_items(*), reminder_count, due_date')
     .eq('type', 'invoice')
+    .or('is_archived.is.null,is_archived.eq.false')
     .order('created_at', { ascending: false });
 
   return (

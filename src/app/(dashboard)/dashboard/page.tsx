@@ -28,6 +28,7 @@ export default async function DashboardPage() {
     supabase
       .from('documents')
       .select('*, customer:customers(name), reminder_count, due_date')
+      .or('is_archived.is.null,is_archived.eq.false')
       .order('created_at', { ascending: false })
       .limit(5),
     supabase.from('subscriptions').select('*').eq('user_id', user?.id).single(),
