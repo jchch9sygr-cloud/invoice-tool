@@ -1,5 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getResend, FROM_EMAIL } from '@/lib/resend';
+import { PaymentReminderEmail } from '@/components/emails/payment-reminder';
+import { createElement } from 'react';
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('de-DE', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(amount);
+}
+
+function formatDate(date: string | null): string {
+  if (!date) return '—';
+  return new Date(date).toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function getDaysOverdue(dueDate: string): number {
+  const due = new Date(dueDate);
+  const today = new Date();
+  const diffTime = today.getTime() - due.getTime();
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
 
 export async function POST(
   request: NextRequest,
@@ -17,6 +43,13 @@ export async function POST(
 
     if (!email) {
       return NextResponse.json({ error: 'E-Mail-Adresse erforderlich' }, { status: 400 });
+    }
+
+    // Check if Resend API key is configured
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json({
+        error: 'E-Mail-Service nicht konfiguriert. Bitte RESEND_API_KEY in den Umgebungsvariablen setzen.'
+      }, { status: 500 });
     }
 
     // Verify document belongs to user
@@ -51,61 +84,47 @@ export async function POST(
     const vatAmount = (netTotal * (document.vat_rate || 0)) / 100;
     const totalAmount = netTotal + vatAmount;
 
-    // Format currency
-    const formatCurrency = (amount: number) =>
-      new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+    const daysOverdue = getDaysOverdue(document.due_date);
 
-    // Prepare email content based on type
+    // Determine email subject based on type and level
     let subject = '';
-    let body = '';
+    const levelNames = ['Zahlungserinnerung', '1. Mahnung', '2. Mahnung', 'Letzte Mahnung'];
 
     if (type === 'reminder') {
-      const levelNames = ['Zahlungserinnerung', '1. Mahnung', '2. Mahnung', 'Letzte Mahnung'];
-      const levelName = levelNames[level] || `${level}. Mahnung`;
-
-      subject = `${levelName} - ${document.number}`;
-      body = `
-Sehr geehrte Damen und Herren,
-
-${level === 0
-  ? `wir möchten Sie freundlich daran erinnern, dass die Rechnung ${document.number} mit einem Betrag von ${formatCurrency(totalAmount)} fällig ist.`
-  : `wir möchten Sie darauf hinweisen, dass die Zahlung für Rechnung ${document.number} über ${formatCurrency(totalAmount)} noch aussteht.`
-}
-
-Bitte überweisen Sie den offenen Betrag auf folgendes Konto:
-${profile?.bank_name ? `Bank: ${profile.bank_name}` : ''}
-${profile?.iban ? `IBAN: ${profile.iban}` : ''}
-${profile?.bic ? `BIC: ${profile.bic}` : ''}
-
-Sollte sich Ihre Zahlung mit dieser Nachricht überschnitten haben, betrachten Sie diese bitte als gegenstandslos.
-
-Mit freundlichen Grüßen
-${profile?.company_name || ''}
-      `.trim();
+      const levelName = levelNames[level] || 'Zahlungserinnerung';
+      subject = `${levelName} - Rechnung ${document.number}`;
     } else {
-      subject = `Rechnung ${document.number}`;
-      body = `
-Sehr geehrte Damen und Herren,
-
-anbei erhalten Sie die Rechnung ${document.number} über ${formatCurrency(totalAmount)}.
-
-Bitte überweisen Sie den Betrag auf folgendes Konto:
-${profile?.bank_name ? `Bank: ${profile.bank_name}` : ''}
-${profile?.iban ? `IBAN: ${profile.iban}` : ''}
-${profile?.bic ? `BIC: ${profile.bic}` : ''}
-
-Mit freundlichen Grüßen
-${profile?.company_name || ''}
-      `.trim();
+      subject = `Rechnung ${document.number} - ${profile?.company_name || 'RechnungsBlitz'}`;
     }
 
-    // TODO: Integrate with email service (SendGrid, Resend, AWS SES, etc.)
-    // For now, we'll just update the database and log
-    console.log('=== E-Mail würde gesendet werden ===');
-    console.log(`An: ${email}`);
-    console.log(`Betreff: ${subject}`);
-    console.log(`Inhalt:\n${body}`);
-    console.log('=====================================');
+    // Send email using Resend
+    const resend = getResend();
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject,
+      react: createElement(PaymentReminderEmail, {
+        customerName: document.customer?.name || 'Kunde',
+        invoiceNumber: document.number,
+        amount: formatCurrency(totalAmount),
+        dueDate: formatDate(document.due_date),
+        daysOverdue,
+        level: level || 0,
+        companyName: profile?.company_name || 'RechnungsBlitz',
+        bankName: profile?.bank_name,
+        iban: profile?.iban,
+        bic: profile?.bic,
+      }),
+    });
+
+    if (emailError) {
+      console.error('Resend error:', emailError);
+      return NextResponse.json({
+        error: 'E-Mail konnte nicht gesendet werden: ' + emailError.message
+      }, { status: 500 });
+    }
+
+    console.log('Email sent successfully:', emailData?.id);
 
     // Update document status
     const updates: Record<string, unknown> = {};
@@ -139,15 +158,14 @@ ${profile?.company_name || ''}
     return NextResponse.json({
       success: true,
       message: type === 'reminder'
-        ? 'Zahlungserinnerung als gesendet markiert'
-        : 'Rechnung als gesendet markiert',
-      // In Zukunft: email_sent: true wenn E-Mail-Service integriert
-      note: 'E-Mail-Versand wird in einer zukünftigen Version verfügbar sein. Dokument wurde als gesendet markiert.',
+        ? 'Zahlungserinnerung wurde per E-Mail gesendet'
+        : 'Rechnung wurde per E-Mail gesendet',
+      emailId: emailData?.id,
     });
   } catch (error) {
     console.error('Send email error:', error);
     return NextResponse.json(
-      { error: 'Fehler beim Senden' },
+      { error: 'Fehler beim Senden der E-Mail' },
       { status: 500 }
     );
   }
