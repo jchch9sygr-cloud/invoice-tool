@@ -1,6 +1,6 @@
 'use client';
 
-import { Lightbulb, Info, CheckCircle2, X } from 'lucide-react';
+import { Lightbulb, Info, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface HelpTip {
@@ -57,20 +57,15 @@ export function HelpPanel({
 
       <div className="space-y-4">
         {tips.map((item, index) => (
-          <div key={index} className="group">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-gray-200">{item.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{item.description}</p>
-                {item.tip && (
-                  <div className="mt-2 flex items-start gap-2 p-2 bg-yellow-900/20 border border-yellow-800/30 rounded-lg">
-                    <Info className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-yellow-400/90">{item.tip}</p>
-                  </div>
-                )}
+          <div key={index}>
+            <p className="text-sm font-medium text-gray-200">{item.title}</p>
+            <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{item.description}</p>
+            {item.tip && (
+              <div className="mt-2 flex items-start gap-2 p-2 bg-yellow-900/20 border border-yellow-800/30 rounded-lg">
+                <Info className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
+                <p className="text-xs text-yellow-400/90">{item.tip}</p>
               </div>
-            </div>
+            )}
           </div>
         ))}
       </div>

@@ -3,17 +3,18 @@
 import { Document, LineItem } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, FileCheck, Download, MoreVertical, Loader2, Settings, AlertTriangle, Mail, Archive } from 'lucide-react';
+import { FileText, FileCheck, Download, MoreVertical, Loader2, Settings, AlertTriangle, Mail, Archive, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatCurrency, formatDate, calculateTotal } from '@/lib/utils';
 import { useState, useRef, useEffect } from 'react';
 
-interface DocumentWithRelations extends Omit<Document, 'customer' | 'reminder_count' | 'due_date'> {
+interface DocumentWithRelations extends Omit<Document, 'customer' | 'reminder_count' | 'due_date' | 'paid_at'> {
   customer?: { name: string } | null;
   line_items?: LineItem[];
   reminder_count?: number | null;
   due_date?: string | null;
+  paid_at?: string | null;
 }
 
 interface DocumentListProps {
@@ -135,7 +136,8 @@ export function DocumentList({ documents, type }: DocumentListProps) {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (doc: DocumentWithRelations) => {
+    const status = doc.status;
     const styles = {
       draft: 'bg-gray-700 text-gray-300',
       sent: 'bg-blue-900/50 text-blue-400',
@@ -148,6 +150,17 @@ export function DocumentList({ documents, type }: DocumentListProps) {
       paid: 'Bezahlt',
       cancelled: 'Storniert',
     };
+
+    // Show paid date for paid invoices
+    if (status === 'paid' && doc.paid_at) {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-green-900/50 text-green-400 px-2 py-0.5 text-xs font-medium">
+          <CheckCircle className="h-3 w-3" />
+          Bezahlt am {formatDate(doc.paid_at)}
+        </span>
+      );
+    }
+
     return (
       <span
         className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -224,7 +237,7 @@ export function DocumentList({ documents, type }: DocumentListProps) {
                       {/* Number + Badge */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-medium text-white text-sm sm:text-base">{doc.number}</h3>
-                        {getStatusBadge(doc.status)}
+                        {getStatusBadge(doc)}
                         {getReminderBadge(doc)}
                       </div>
                       {/* Customer + Date */}

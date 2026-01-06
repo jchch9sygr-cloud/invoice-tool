@@ -1028,26 +1028,43 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Beispiel-Timeline */}
-                <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                  <p className="text-xs text-gray-500 mb-2">Beispiel bei Fälligkeit am 1. Januar:</p>
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="px-2 py-1 bg-cyan-900/50 text-cyan-400 rounded">
-                      {formData.reminder_days_first || 7}. Jan: Erinnerung
-                    </span>
-                    <span className="text-gray-600">→</span>
-                    <span className="px-2 py-1 bg-yellow-900/50 text-yellow-400 rounded">
-                      {(formData.reminder_days_first || 7) + (formData.reminder_days_second || 14)}. Jan: 1. Mahnung
-                    </span>
-                    <span className="text-gray-600">→</span>
-                    <span className="px-2 py-1 bg-orange-900/50 text-orange-400 rounded">
-                      {(formData.reminder_days_first || 7) + (formData.reminder_days_second || 14) + (formData.reminder_days_third || 14)}. Jan: 2. Mahnung
-                    </span>
-                    <span className="text-gray-600">→</span>
-                    <span className="px-2 py-1 bg-red-900/50 text-red-400 rounded">
-                      {(formData.reminder_days_first || 7) + (formData.reminder_days_second || 14) + (formData.reminder_days_third || 14) + (formData.reminder_days_final || 7)}. Jan: Letzte
-                    </span>
-                  </div>
-                </div>
+                {(() => {
+                  // Berechne realistische Daten ab 1. Januar
+                  const baseDate = new Date(2025, 0, 1); // 1. Januar 2025
+                  const formatExampleDate = (daysToAdd: number) => {
+                    const date = new Date(baseDate);
+                    date.setDate(date.getDate() + daysToAdd);
+                    return date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+                  };
+
+                  const days1 = formData.reminder_days_first || 7;
+                  const days2 = days1 + (formData.reminder_days_second || 14);
+                  const days3 = days2 + (formData.reminder_days_third || 14);
+                  const days4 = days3 + (formData.reminder_days_final || 7);
+
+                  return (
+                    <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                      <p className="text-xs text-gray-500 mb-2">Beispiel bei Fälligkeit am 1. Januar:</p>
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="px-2 py-1 bg-cyan-900/50 text-cyan-400 rounded">
+                          {formatExampleDate(days1)}: Erinnerung
+                        </span>
+                        <span className="text-gray-600">→</span>
+                        <span className="px-2 py-1 bg-yellow-900/50 text-yellow-400 rounded">
+                          {formatExampleDate(days2)}: 1. Mahnung
+                        </span>
+                        <span className="text-gray-600">→</span>
+                        <span className="px-2 py-1 bg-orange-900/50 text-orange-400 rounded">
+                          {formatExampleDate(days3)}: 2. Mahnung
+                        </span>
+                        <span className="text-gray-600">→</span>
+                        <span className="px-2 py-1 bg-red-900/50 text-red-400 rounded">
+                          {formatExampleDate(days4)}: Letzte
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
