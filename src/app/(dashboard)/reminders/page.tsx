@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, FileWarning, Download, AlertTriangle, Pencil } from 'lucide-react';
+import { Search, FileWarning, Download, AlertTriangle, Pencil, FileText } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -170,6 +170,20 @@ export default function RemindersPage() {
     });
 
     window.open(`/reminders/${selectedInvoice.id}/pdf?${params.toString()}`, '_blank');
+  };
+
+  const handleDownloadWord = () => {
+    if (!selectedInvoice) return;
+
+    // Encode the custom text for URL
+    const params = new URLSearchParams({
+      level: reminderLevel.toString(),
+      text: encodeURIComponent(reminderText),
+      closing: encodeURIComponent(closingText),
+    });
+
+    // Direct download via anchor tag
+    window.location.href = `/api/reminders/${selectedInvoice.id}/word?${params.toString()}`;
   };
 
   const handleMarkAsSent = async () => {
@@ -389,10 +403,16 @@ export default function RemindersPage() {
 
                   {/* Actions */}
                   <div className="flex flex-col gap-2 pt-2">
-                    <Button onClick={handleDownloadReminder} className="w-full">
-                      <Download className="h-4 w-4 mr-2" />
-                      PDF herunterladen
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button onClick={handleDownloadReminder} className="flex-1">
+                        <Download className="h-4 w-4 mr-2" />
+                        PDF
+                      </Button>
+                      <Button onClick={handleDownloadWord} variant="outline" className="flex-1">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Word
+                      </Button>
+                    </div>
                     <Button
                       variant="outline"
                       onClick={handleMarkAsSent}
