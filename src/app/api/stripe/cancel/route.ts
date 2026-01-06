@@ -42,16 +42,30 @@ export async function POST() {
     );
 
     // Fetch subscription to get current_period_end
-    const stripeSubscription = await stripe.subscriptions.retrieve(
+    const stripeResponse = await stripe.subscriptions.retrieve(
       subscription.stripe_subscription_id
     );
 
+    // Cast to any for debugging and access
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const stripeSubscription = stripeResponse as any;
+
+    // Debug: Log the full Stripe response
+    console.log('=== STRIPE SUBSCRIPTION DEBUG ===');
+    console.log('Type:', typeof stripeSubscription);
+    console.log('Keys:', Object.keys(stripeSubscription));
+    console.log('current_period_end:', stripeSubscription.current_period_end);
+    console.log('cancel_at_period_end:', stripeSubscription.cancel_at_period_end);
+    console.log('status:', stripeSubscription.status);
+    console.log('=================================');
+
     // Get current period end from the subscription
     let periodEnd: string | null = null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentPeriodEnd = (stripeSubscription as any).current_period_end;
-    if (currentPeriodEnd) {
-      periodEnd = new Date(currentPeriodEnd * 1000).toISOString();
+    if (stripeSubscription.current_period_end) {
+      periodEnd = new Date(stripeSubscription.current_period_end * 1000).toISOString();
+      console.log('Parsed periodEnd:', periodEnd);
+    } else {
+      console.log('current_period_end is missing or falsy');
     }
 
     // Update database
