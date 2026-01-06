@@ -69,9 +69,9 @@ export default function LandingPage() {
               <a href="#pricing" className="block py-2 text-gray-300" onClick={() => setMobileMenuOpen(false)}>
                 Preise
               </a>
-              <div className="pt-3 space-y-2">
+              <div className="pt-4 flex flex-col gap-4">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full justify-center">
+                  <Button className="w-full justify-center bg-blue-600 hover:bg-blue-700">
                     Anmelden
                   </Button>
                 </Link>
