@@ -80,6 +80,9 @@ export interface Document {
   // Courtage fields
   courtage_base_amount: number | null;
   courtage_percentage: number | null;
+  // Reminder fields
+  reminder_count: number;
+  last_reminder_date: string | null;
   created_at: string;
   customer?: Customer;
   line_items?: LineItem[];

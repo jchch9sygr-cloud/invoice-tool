@@ -11,6 +11,7 @@ import {
   LogOut,
   Zap,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 import { GlobalSearch } from './global-search';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ const navigation = [
   { name: 'Kunden', href: '/customers', icon: Users },
   { name: 'Rechnungen', href: '/invoices', icon: FileText },
   { name: 'Angebote', href: '/quotes', icon: FileCheck },
+  { name: 'Mahnwesen', href: '/reminders', icon: AlertTriangle },
   { name: 'Einstellungen', href: '/settings', icon: Settings },
 ];
 

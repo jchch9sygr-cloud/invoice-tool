@@ -13,6 +13,7 @@ import {
   Settings,
   Trash2,
   FileDown,
+  Pencil,
 } from 'lucide-react';
 import type { Document } from '@/types/database';
 
@@ -106,15 +107,27 @@ export function DocumentActions({ document }: DocumentActionsProps) {
 
   const isInvoice = document.type === 'invoice';
   const isPaid = document.status === 'paid';
+  const canEdit = !isPaid; // Bezahlte Rechnungen sind gesperrt
   const canMarkPaid = isInvoice && !isPaid;
   const canUnmarkPaid = isInvoice && isPaid;
   const canConvert = document.type === 'quote';
   const canDelete = true; // API prüft ob bezahlte Rechnungen gelöscht werden dürfen
 
+  const editPath = isInvoice ? `/invoices/${document.id}/edit` : `/quotes/${document.id}/edit`;
+
   return (
     <div className="relative">
       {/* Desktop Actions */}
       <div className="hidden sm:flex gap-2">
+        {canEdit && (
+          <Link href={editPath}>
+            <Button variant="outline" size="sm">
+              <Pencil className="h-4 w-4 mr-1" />
+              Bearbeiten
+            </Button>
+          </Link>
+        )}
+
         {canMarkPaid && (
           <Button
             variant="outline"
@@ -204,6 +217,17 @@ export function DocumentActions({ document }: DocumentActionsProps) {
               onClick={() => setShowDropdown(false)}
             />
             <div className="absolute right-0 top-full mt-1 z-50 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 min-w-[180px]">
+              {canEdit && (
+                <Link
+                  href={editPath}
+                  onClick={() => setShowDropdown(false)}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 flex items-center gap-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Bearbeiten
+                </Link>
+              )}
+
               {canMarkPaid && (
                 <button
                   onClick={() => handleAction('mark-paid')}
