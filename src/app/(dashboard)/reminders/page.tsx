@@ -6,7 +6,8 @@ import { PageHeader } from '@/components/layout/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, FileWarning, Send, Download, AlertTriangle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Search, FileWarning, Download, AlertTriangle, Pencil } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -50,6 +51,35 @@ function getDaysOverdue(dueDate: string): number {
   return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 }
 
+function getDefaultReminderText(level: number, customerName: string, lastReminderDate: string | null): string {
+  const salutation = customerName.toLowerCase().includes('herr')
+    ? 'Sehr geehrter Herr'
+    : customerName.toLowerCase().includes('frau')
+    ? 'Sehr geehrte Frau'
+    : 'Sehr geehrte Damen und Herren';
+
+  switch (level) {
+    case 1:
+      return `${salutation},
+
+bei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung noch nicht beglichen wurde. Wir möchten Sie freundlich daran erinnern, den ausstehenden Betrag zu überweisen.
+
+Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie dieses bitte als gegenstandslos.`;
+    case 2:
+      return `${salutation},
+
+trotz unserer Zahlungserinnerung${lastReminderDate ? ` vom ${formatDate(lastReminderDate)}` : ''} ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.
+
+Wir bitten Sie daher nochmals, den ausstehenden Betrag umgehend zu begleichen. Sollten Sie Fragen zur Rechnung haben oder eine Ratenzahlung wünschen, nehmen Sie bitte Kontakt mit uns auf.`;
+    default:
+      return `${salutation},
+
+leider müssen wir feststellen, dass Sie trotz unserer bisherigen Mahnungen den ausstehenden Rechnungsbetrag nicht beglichen haben.
+
+Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, weitere rechtliche Schritte einzuleiten.`;
+  }
+}
+
 export default function RemindersPage() {
   const supabase = createClient();
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,7 +88,9 @@ export default function RemindersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<OverdueInvoice | null>(null);
   const [reminderLevel, setReminderLevel] = useState(1);
-  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderText, setReminderText] = useState('');
+  const [closingText, setClosingText] = useState('Für Rückfragen stehen wir Ihnen gerne zur Verfügung.');
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     loadOverdueInvoices();
@@ -79,6 +111,23 @@ export default function RemindersPage() {
       );
     }
   }, [searchQuery, overdueInvoices]);
+
+  // Update reminder text when level or invoice changes
+  useEffect(() => {
+    if (selectedInvoice) {
+      const defaultText = getDefaultReminderText(
+        reminderLevel,
+        selectedInvoice.customer?.name || '',
+        selectedInvoice.last_reminder_date
+      );
+      setReminderText(defaultText);
+      setClosingText(
+        reminderLevel >= 3
+          ? 'Wir erwarten Ihre Zahlung innerhalb von 7 Tagen.'
+          : 'Für Rückfragen stehen wir Ihnen gerne zur Verfügung.'
+      );
+    }
+  }, [reminderLevel, selectedInvoice]);
 
   const loadOverdueInvoices = async () => {
     setLoading(true);
@@ -105,19 +154,26 @@ export default function RemindersPage() {
 
   const handleSelectInvoice = (invoice: OverdueInvoice) => {
     setSelectedInvoice(invoice);
-    setReminderLevel((invoice.reminder_count || 0) + 1);
+    const newLevel = (invoice.reminder_count || 0) + 1;
+    setReminderLevel(Math.min(newLevel, 3));
+    setIsEditing(false);
   };
 
   const handleDownloadReminder = async () => {
     if (!selectedInvoice) return;
 
-    // Open PDF in new tab
-    window.open(`/reminders/${selectedInvoice.id}/pdf?level=${reminderLevel}`, '_blank');
+    // Encode the custom text for URL
+    const params = new URLSearchParams({
+      level: reminderLevel.toString(),
+      text: encodeURIComponent(reminderText),
+      closing: encodeURIComponent(closingText),
+    });
+
+    window.open(`/reminders/${selectedInvoice.id}/pdf?${params.toString()}`, '_blank');
   };
 
-  const handleSendReminder = async () => {
+  const handleMarkAsSent = async () => {
     if (!selectedInvoice) return;
-    setSendingReminder(true);
 
     try {
       const response = await fetch(`/api/documents/${selectedInvoice.id}/send-reminder`, {
@@ -127,38 +183,28 @@ export default function RemindersPage() {
       });
 
       if (response.ok) {
-        // Reload invoices to update reminder count
         await loadOverdueInvoices();
         setSelectedInvoice(null);
       }
     } catch (error) {
-      console.error('Failed to send reminder:', error);
-    } finally {
-      setSendingReminder(false);
+      console.error('Failed to mark reminder as sent:', error);
     }
   };
 
   const getReminderLevelLabel = (level: number): string => {
     switch (level) {
-      case 1:
-        return '1. Mahnung (Zahlungserinnerung)';
-      case 2:
-        return '2. Mahnung';
-      case 3:
-        return '3. Mahnung (letzte Mahnung)';
-      default:
-        return `${level}. Mahnung`;
+      case 1: return 'Zahlungserinnerung';
+      case 2: return '2. Mahnung';
+      case 3: return 'Letzte Mahnung';
+      default: return `${level}. Mahnung`;
     }
   };
 
   const getReminderLevelColor = (level: number): string => {
     switch (level) {
-      case 1:
-        return 'text-yellow-400';
-      case 2:
-        return 'text-orange-400';
-      default:
-        return 'text-red-400';
+      case 1: return 'text-yellow-400';
+      case 2: return 'text-orange-400';
+      default: return 'text-red-400';
     }
   };
 
@@ -166,7 +212,7 @@ export default function RemindersPage() {
     <div>
       <PageHeader title="Mahnwesen">
         <div className="text-sm text-gray-400">
-          {overdueInvoices.length} überfällige Rechnung{overdueInvoices.length !== 1 ? 'en' : ''}
+          {overdueInvoices.length} überfällig
         </div>
       </PageHeader>
 
@@ -176,7 +222,7 @@ export default function RemindersPage() {
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Nach Rechnungsnummer oder Kundenname suchen..."
+              placeholder="RE-Nummer oder Kundenname..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -184,27 +230,27 @@ export default function RemindersPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Überfällige Rechnungen */}
           <Card>
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <CardHeader className="px-4 sm:px-6 py-4">
+              <CardTitle className="text-base flex items-center gap-2">
                 <FileWarning className="h-5 w-5 text-yellow-500" />
                 Überfällige Rechnungen
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-4 sm:px-6">
+            <CardContent className="px-4 sm:px-6 pb-4">
               {loading ? (
                 <div className="text-center py-8 text-gray-400">Lade...</div>
               ) : filteredInvoices.length === 0 ? (
                 <div className="text-center py-8">
-                  <AlertTriangle className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400">
-                    {searchQuery ? 'Keine Ergebnisse gefunden' : 'Keine überfälligen Rechnungen'}
+                  <AlertTriangle className="h-10 w-10 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400 text-sm">
+                    {searchQuery ? 'Keine Ergebnisse' : 'Keine überfälligen Rechnungen'}
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2 max-h-[500px] overflow-y-auto">
                   {filteredInvoices.map((invoice) => {
                     const daysOverdue = getDaysOverdue(invoice.due_date);
                     const total = calculateTotal(invoice);
@@ -214,35 +260,31 @@ export default function RemindersPage() {
                       <button
                         key={invoice.id}
                         onClick={() => handleSelectInvoice(invoice)}
-                        className={`w-full text-left p-4 rounded-xl border transition-colors ${
+                        className={`w-full text-left p-3 rounded-xl border transition-colors ${
                           isSelected
                             ? 'bg-blue-900/30 border-blue-600'
                             : 'bg-gray-800/50 border-gray-700 hover:border-gray-600'
                         }`}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <p className="font-medium text-white">{invoice.number}</p>
-                            <p className="text-sm text-gray-400">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-white text-sm truncate">{invoice.number}</p>
+                            <p className="text-xs text-gray-400 truncate">
                               {invoice.customer?.name || 'Kein Kunde'}
-                              {invoice.customer?.company && ` (${invoice.customer.company})`}
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold text-white">{formatCurrency(total)}</p>
+                          <div className="text-right shrink-0">
+                            <p className="font-semibold text-white text-sm">{formatCurrency(total)}</p>
                             <p className={`text-xs ${daysOverdue > 14 ? 'text-red-400' : 'text-yellow-400'}`}>
-                              {daysOverdue} Tage überfällig
+                              {daysOverdue}d überfällig
                             </p>
                           </div>
                         </div>
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Fällig: {formatDate(invoice.due_date)}</span>
-                          {invoice.reminder_count > 0 && (
-                            <span className={getReminderLevelColor(invoice.reminder_count)}>
-                              {invoice.reminder_count}. Mahnung gesendet
-                            </span>
-                          )}
-                        </div>
+                        {invoice.reminder_count > 0 && (
+                          <p className={`text-xs mt-1 ${getReminderLevelColor(invoice.reminder_count)}`}>
+                            {invoice.reminder_count}. Mahnung gesendet
+                          </p>
+                        )}
                       </button>
                     );
                   })}
@@ -253,25 +295,45 @@ export default function RemindersPage() {
 
           {/* Mahnung erstellen */}
           <Card>
-            <CardHeader className="px-4 sm:px-6">
-              <CardTitle className="text-base sm:text-lg">Mahnung erstellen</CardTitle>
+            <CardHeader className="px-4 sm:px-6 py-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Mahnung erstellen</CardTitle>
+                {selectedInvoice && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditing(!isEditing)}
+                    className="text-gray-400"
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    {isEditing ? 'Vorschau' : 'Bearbeiten'}
+                  </Button>
+                )}
+              </div>
             </CardHeader>
-            <CardContent className="px-4 sm:px-6">
+            <CardContent className="px-4 sm:px-6 pb-4">
               {selectedInvoice ? (
                 <div className="space-y-4">
                   {/* Ausgewählte Rechnung */}
-                  <div className="p-4 bg-gray-800 rounded-xl">
-                    <p className="text-sm text-gray-400 mb-1">Ausgewählte Rechnung</p>
-                    <p className="font-semibold text-white text-lg">{selectedInvoice.number}</p>
-                    <p className="text-gray-300">{selectedInvoice.customer?.name}</p>
-                    <p className="text-xl font-bold text-white mt-2">
-                      {formatCurrency(calculateTotal(selectedInvoice))}
-                    </p>
+                  <div className="p-3 bg-gray-800 rounded-xl">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-xs text-gray-400">Rechnung</p>
+                        <p className="font-semibold text-white">{selectedInvoice.number}</p>
+                        <p className="text-sm text-gray-300">{selectedInvoice.customer?.name}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">Offener Betrag</p>
+                        <p className="text-lg font-bold text-white">
+                          {formatCurrency(calculateTotal(selectedInvoice))}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Mahnstufe */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                    <label className="block text-xs font-medium text-gray-400 mb-2">
                       Mahnstufe
                     </label>
                     <div className="flex gap-2">
@@ -279,69 +341,80 @@ export default function RemindersPage() {
                         <button
                           key={level}
                           onClick={() => setReminderLevel(level)}
-                          className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                             reminderLevel === level
-                              ? 'bg-blue-600 text-white'
+                              ? level === 1 ? 'bg-yellow-600 text-white'
+                              : level === 2 ? 'bg-orange-600 text-white'
+                              : 'bg-red-600 text-white'
                               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          {level}. Mahnung
+                          {getReminderLevelLabel(level)}
                         </button>
                       ))}
                     </div>
-                    <p className={`mt-2 text-sm ${getReminderLevelColor(reminderLevel)}`}>
-                      {getReminderLevelLabel(reminderLevel)}
-                    </p>
                   </div>
 
-                  {/* Info zur Mahnstufe */}
-                  <div className="p-3 bg-gray-800/50 rounded-lg text-sm text-gray-400">
-                    {reminderLevel === 1 && (
-                      <p>Freundliche Erinnerung an die ausstehende Zahlung. Keine zusätzlichen Gebühren.</p>
-                    )}
-                    {reminderLevel === 2 && (
-                      <p>Nachdrückliche Zahlungsaufforderung mit Hinweis auf mögliche weitere Schritte.</p>
-                    )}
-                    {reminderLevel >= 3 && (
-                      <p>Letzte Mahnung vor eventueller Übergabe an ein Inkassounternehmen.</p>
-                    )}
-                  </div>
+                  {/* Text bearbeiten oder Vorschau */}
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">
+                          Mahnungstext
+                        </label>
+                        <Textarea
+                          value={reminderText}
+                          onChange={(e) => setReminderText(e.target.value)}
+                          rows={6}
+                          className="text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-400 mb-1">
+                          Schlusstext
+                        </label>
+                        <Input
+                          value={closingText}
+                          onChange={(e) => setClosingText(e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-gray-800/50 rounded-lg text-sm text-gray-300 max-h-48 overflow-y-auto">
+                      <p className="whitespace-pre-line">{reminderText}</p>
+                      <p className="mt-3 text-gray-400">{closingText}</p>
+                    </div>
+                  )}
 
                   {/* Actions */}
-                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                    <Button
-                      onClick={handleDownloadReminder}
-                      variant="outline"
-                      className="flex-1"
-                    >
+                  <div className="flex flex-col gap-2 pt-2">
+                    <Button onClick={handleDownloadReminder} className="w-full">
                       <Download className="h-4 w-4 mr-2" />
                       PDF herunterladen
                     </Button>
-                    {selectedInvoice.customer?.email && (
-                      <Button
-                        onClick={handleSendReminder}
-                        className="flex-1"
-                        disabled={sendingReminder}
-                      >
-                        <Send className="h-4 w-4 mr-2" />
-                        {sendingReminder ? 'Wird gesendet...' : 'Per E-Mail senden'}
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      onClick={handleMarkAsSent}
+                      className="w-full"
+                    >
+                      Als gesendet markieren
+                    </Button>
                   </div>
 
                   {/* Link zur Rechnung */}
                   <Link
                     href={`/invoices/${selectedInvoice.id}`}
-                    className="block text-center text-sm text-blue-400 hover:text-blue-300"
+                    className="block text-center text-xs text-blue-400 hover:text-blue-300"
                   >
                     Rechnung anzeigen →
                   </Link>
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <FileWarning className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-400">
-                    Wähle links eine überfällige Rechnung aus, um eine Mahnung zu erstellen.
+                <div className="text-center py-10">
+                  <FileWarning className="h-10 w-10 text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-400 text-sm">
+                    Rechnung auswählen
                   </p>
                 </div>
               )}

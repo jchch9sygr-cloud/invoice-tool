@@ -15,6 +15,8 @@ interface ReminderPDFPageProps {
 export default function ReminderPDFPage({ params }: ReminderPDFPageProps) {
   const searchParams = useSearchParams();
   const level = parseInt(searchParams.get('level') || '1', 10);
+  const customText = searchParams.get('text') ? decodeURIComponent(searchParams.get('text')!) : null;
+  const customClosing = searchParams.get('closing') ? decodeURIComponent(searchParams.get('closing')!) : null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,23 +76,26 @@ export default function ReminderPDFPage({ params }: ReminderPDFPageProps) {
             customer={document.customer as Customer | null}
             level={level}
             totalAmount={totalAmount}
+            customText={customText}
+            customClosing={customClosing}
           />
         ).toBlob();
 
         // Create download
         const url = URL.createObjectURL(blob);
-        const filename = `Mahnung_${level}_${document.number.replace(/\//g, '-')}.pdf`;
+        const levelName = level === 1 ? 'Zahlungserinnerung' : level === 2 ? '2_Mahnung' : 'Letzte_Mahnung';
+        const filename = `${levelName}_${document.number.replace(/\//g, '-')}.pdf`;
 
-        // Open in new tab or download
+        // Download file
         const link = window.document.createElement('a');
         link.href = url;
         link.download = filename;
         link.click();
 
-        // Redirect back
+        // Redirect back after download
         setTimeout(() => {
           window.close();
-        }, 1000);
+        }, 500);
 
       } catch (err) {
         console.error('PDF generation error:', err);
@@ -101,7 +106,7 @@ export default function ReminderPDFPage({ params }: ReminderPDFPageProps) {
     };
 
     generatePDF();
-  }, [params, level]);
+  }, [params, level, customText, customClosing]);
 
   if (error) {
     return (
