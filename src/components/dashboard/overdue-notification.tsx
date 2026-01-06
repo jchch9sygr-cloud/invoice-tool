@@ -24,6 +24,7 @@ interface OverdueInvoice {
   courtage_base_amount: number | null;
   courtage_percentage: number | null;
   reminder_count: number;
+  last_reminder_date: string | null;
 }
 
 function calculateTotal(invoice: OverdueInvoice): number {
@@ -44,6 +45,44 @@ function getDaysOverdue(dueDate: string): number {
   const today = new Date();
   const diffTime = today.getTime() - due.getTime();
   return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
+function getDaysSinceLastReminder(lastReminderDate: string | null): number {
+  if (!lastReminderDate) return Infinity;
+  const last = new Date(lastReminderDate);
+  const today = new Date();
+  const diffTime = today.getTime() - last.getTime();
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
+// Prüft ob eine Mahnung/Erinnerung fällig ist basierend auf dem Intervall
+// Zahlungserinnerung: 3-7 Tage nach Fälligkeit
+// Mahnungen: 14 Tage nach letzter Erinnerung/Mahnung
+function isReminderDue(invoice: OverdueInvoice): boolean {
+  const daysOverdue = getDaysOverdue(invoice.due_date);
+  const daysSinceLastReminder = getDaysSinceLastReminder(invoice.last_reminder_date);
+
+  // Erste Zahlungserinnerung: 3+ Tage überfällig, noch keine Erinnerung gesendet
+  if (invoice.reminder_count === 0 && daysOverdue >= 3) {
+    return true;
+  }
+
+  // Nachfolgende Mahnungen: 14 Tage seit letzter Erinnerung
+  if (invoice.reminder_count > 0 && daysSinceLastReminder >= 14) {
+    return true;
+  }
+
+  return false;
+}
+
+function getReminderLevel(invoice: OverdueInvoice): { level: number; label: string } {
+  const count = invoice.reminder_count || 0;
+  switch (count) {
+    case 0: return { level: 0, label: 'Zahlungserinnerung' };
+    case 1: return { level: 1, label: '1. Mahnung' };
+    case 2: return { level: 2, label: '2. Mahnung' };
+    default: return { level: 3, label: 'Letzte Mahnung' };
+  }
 }
 
 export function OverdueNotification() {
@@ -68,7 +107,7 @@ export function OverdueNotification() {
 
     const { data, error } = await supabase
       .from('documents')
-      .select('*, customer:customers(id, name, email), line_items(*)')
+      .select('id, number, date, due_date, vat_rate, courtage_base_amount, courtage_percentage, reminder_count, last_reminder_date, customer:customers(id, name, email), line_items(*)')
       .eq('user_id', user.id)
       .eq('type', 'invoice')
       .in('status', ['draft', 'sent'])
@@ -76,7 +115,9 @@ export function OverdueNotification() {
       .order('due_date', { ascending: true });
 
     if (!error && data) {
-      setOverdueInvoices(data as OverdueInvoice[]);
+      // Nur Rechnungen zeigen, bei denen eine Mahnung/Erinnerung fällig ist
+      const dueInvoices = (data as unknown as OverdueInvoice[]).filter(isReminderDue);
+      setOverdueInvoices(dueInvoices);
     }
   };
 
@@ -103,18 +144,16 @@ export function OverdueNotification() {
       });
 
       if (response.ok) {
-        setSent(true);
-        // Update reminder count
-        await supabase
-          .from('documents')
-          .update({
-            reminder_count: (selectedInvoice.reminder_count || 0) + 1,
-            last_reminder_date: new Date().toISOString(),
-          })
-          .eq('id', selectedInvoice.id);
+        // Diese Rechnung aus der Liste entfernen (wird erst bei nächstem Intervall wieder angezeigt)
+        setOverdueInvoices(prev => prev.filter(inv => inv.id !== selectedInvoice.id));
 
-        // Refresh list
-        await loadOverdueInvoices();
+        // Modal nach kurzem Feedback schließen
+        setSent(true);
+        setTimeout(() => {
+          setShowModal(false);
+          setSent(false);
+          setSelectedInvoice(null);
+        }, 1500);
       }
     } catch (error) {
       console.error('Error sending reminder:', error);
@@ -134,46 +173,46 @@ export function OverdueNotification() {
   // Show the most urgent (longest overdue) invoice first
   const urgentInvoice = visibleInvoices[0];
   const daysOverdue = getDaysOverdue(urgentInvoice.due_date);
+  const reminderInfo = getReminderLevel(urgentInvoice);
+  const isUrgent = reminderInfo.level >= 2;
 
   return (
     <>
       {/* Notification Banner */}
       <div className={`rounded-xl border p-4 ${
-        daysOverdue > 14
+        isUrgent
           ? 'bg-red-900/30 border-red-800'
           : 'bg-yellow-900/30 border-yellow-800'
       }`}>
         <div className="flex items-start gap-3">
           <div className={`p-2 rounded-lg shrink-0 ${
-            daysOverdue > 14 ? 'bg-red-500/20' : 'bg-yellow-500/20'
+            isUrgent ? 'bg-red-500/20' : 'bg-yellow-500/20'
           }`}>
-            <Clock className={`h-5 w-5 ${daysOverdue > 14 ? 'text-red-400' : 'text-yellow-400'}`} />
+            <Clock className={`h-5 w-5 ${isUrgent ? 'text-red-400' : 'text-yellow-400'}`} />
           </div>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className={`font-semibold ${daysOverdue > 14 ? 'text-red-300' : 'text-yellow-300'}`}>
+              <h3 className={`font-semibold ${isUrgent ? 'text-red-300' : 'text-yellow-300'}`}>
                 {visibleInvoices.length === 1
-                  ? 'Zahlungserinnerung fällig'
-                  : `${visibleInvoices.length} Rechnungen überfällig`}
+                  ? `${reminderInfo.label} fällig`
+                  : `${visibleInvoices.length} Mahnungen fällig`}
               </h3>
             </div>
 
             <p className="text-sm text-gray-400 mb-3">
-              <strong className="text-white">{urgentInvoice.number}</strong> für {urgentInvoice.customer?.name || 'Unbekannt'} ist seit <strong className={daysOverdue > 14 ? 'text-red-400' : 'text-yellow-400'}>{daysOverdue} Tagen</strong> überfällig.
-              {!urgentInvoice.reminder_count && ' Jetzt Zahlungserinnerung senden.'}
-              {urgentInvoice.reminder_count === 1 && ' Erinnerung bereits gesendet.'}
-              {urgentInvoice.reminder_count && urgentInvoice.reminder_count > 1 && ` ${urgentInvoice.reminder_count - 1}. Mahnung gesendet.`}
+              <strong className="text-white">{urgentInvoice.number}</strong> für {urgentInvoice.customer?.name || 'Unbekannt'} ist seit <strong className={isUrgent ? 'text-red-400' : 'text-yellow-400'}>{daysOverdue} Tagen</strong> überfällig.
+              {' '}Jetzt {reminderInfo.label} senden.
             </p>
 
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 onClick={() => handleOpenReminder(urgentInvoice)}
-                className={daysOverdue > 14 ? 'bg-red-600 hover:bg-red-700' : 'bg-yellow-600 hover:bg-yellow-700 text-black'}
+                className={isUrgent ? 'bg-red-600 hover:bg-red-700' : 'bg-yellow-600 hover:bg-yellow-700 text-black'}
               >
                 <Mail className="h-4 w-4 mr-1" />
-                Erinnerung senden
+                {reminderInfo.label} senden
               </Button>
               <Link href="/reminders">
                 <Button size="sm" variant="outline">
@@ -202,7 +241,9 @@ export function OverdueNotification() {
       {/* Send Reminder Modal */}
       <Modal isOpen={showModal} onClose={() => setShowModal(false)}>
         <ModalHeader>
-          <h3 className="text-xl font-semibold text-white">Zahlungserinnerung senden</h3>
+          <h3 className="text-xl font-semibold text-white">
+            {selectedInvoice ? getReminderLevel(selectedInvoice).label : 'Zahlungserinnerung'} senden
+          </h3>
         </ModalHeader>
         <ModalBody>
           {selectedInvoice && (
@@ -255,7 +296,7 @@ export function OverdueNotification() {
               <div className="p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg">
                 <p className="text-sm text-blue-300">
                   <AlertTriangle className="h-4 w-4 inline mr-1" />
-                  Eine freundliche Zahlungserinnerung wird per E-Mail an den Kunden gesendet.
+                  {getReminderLevel(selectedInvoice).label} wird per E-Mail mit PDF-Anhang an den Kunden gesendet.
                 </p>
               </div>
             </div>
@@ -271,7 +312,7 @@ export function OverdueNotification() {
             disabled={!email || sent}
           >
             <Send className="h-4 w-4 mr-2" />
-            {sent ? 'Gesendet' : 'Erinnerung senden'}
+            {sent ? 'Gesendet!' : `${selectedInvoice ? getReminderLevel(selectedInvoice).label : 'Erinnerung'} senden`}
           </Button>
         </ModalFooter>
       </Modal>

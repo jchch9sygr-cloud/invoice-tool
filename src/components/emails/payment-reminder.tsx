@@ -110,6 +110,37 @@ export function PaymentReminderEmail({
         </p>
       </div>
 
+      {/* Anleitung */}
+      <div style={{
+        backgroundColor: '#eff6ff',
+        padding: '15px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        border: '1px solid #bfdbfe'
+      }}>
+        <p style={{ margin: '0 0 10px', fontWeight: 'bold', color: '#1e40af', fontSize: '14px' }}>
+          So überweisen Sie:
+        </p>
+        <ol style={{ margin: '0', paddingLeft: '20px', color: '#374151', fontSize: '14px', lineHeight: '1.8' }}>
+          <li>Verwenden Sie die unten angegebene Bankverbindung</li>
+          <li>Geben Sie als Verwendungszweck die Rechnungsnummer <strong>{invoiceNumber}</strong> an</li>
+          <li>Überweisen Sie den Betrag von <strong>{amount}</strong></li>
+        </ol>
+      </div>
+
+      {/* PDF Hinweis */}
+      <div style={{
+        backgroundColor: '#fef3c7',
+        padding: '12px 15px',
+        borderRadius: '8px',
+        marginBottom: '20px',
+        border: '1px solid #fcd34d'
+      }}>
+        <p style={{ margin: '0', color: '#92400e', fontSize: '13px' }}>
+          <strong>📎 Anhang:</strong> Die vollständige {level === 0 ? 'Zahlungserinnerung' : 'Mahnung'} finden Sie als PDF im Anhang dieser E-Mail.
+        </p>
+      </div>
+
       {/* Bank Details */}
       {(bankName || iban) && (
         <div style={{
