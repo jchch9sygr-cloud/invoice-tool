@@ -78,29 +78,36 @@ export default async function DashboardPage() {
               </div>
 
               <div className="space-y-3">
-                {/* Step 1: Settings */}
-                <div className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${hasCompanySetup ? 'bg-green-900/20 border border-green-800/30' : 'bg-gray-800/50 border border-gray-700'}`}>
-                  <div className={`p-2 rounded-lg ${hasCompanySetup ? 'bg-green-500/20' : 'bg-gray-700'}`}>
-                    {hasCompanySetup ? (
+                {/* Step 1: Settings - Hervorgehoben für neue User */}
+                {!hasCompanySetup ? (
+                  <Link href="/settings" className="block">
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-2 border-blue-500/50 hover:border-blue-400 transition-all cursor-pointer group">
+                      <div className="p-2 rounded-lg bg-blue-500/30">
+                        <Settings className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-blue-300 group-hover:text-blue-200">
+                          1. Zuerst: Firmendaten einrichten
+                        </p>
+                        <p className="text-xs text-gray-400">Logo, Adresse, Bankverbindung – dauert nur 2 Minuten</p>
+                      </div>
+                      <div className="shrink-0 flex items-center gap-2">
+                        <span className="text-xs text-blue-400 hidden sm:inline">Jetzt einrichten</span>
+                        <ArrowRight className="h-5 w-5 text-blue-400 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-green-900/20 border border-green-800/30">
+                    <div className="p-2 rounded-lg bg-green-500/20">
                       <CheckCircle2 className="h-5 w-5 text-green-400" />
-                    ) : (
-                      <Settings className="h-5 w-5 text-gray-400" />
-                    )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-green-400">Firmendaten eingerichtet</p>
+                      <p className="text-xs text-gray-500">Logo, Adresse, Bankverbindung</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`font-medium ${hasCompanySetup ? 'text-green-400' : 'text-white'}`}>
-                      {hasCompanySetup ? 'Firmendaten eingerichtet' : '1. Firmendaten einrichten'}
-                    </p>
-                    <p className="text-xs text-gray-500">Logo, Adresse, Bankverbindung</p>
-                  </div>
-                  {!hasCompanySetup && (
-                    <Link href="/settings">
-                      <Button size="sm" variant="outline" className="shrink-0">
-                        <ArrowRight className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  )}
-                </div>
+                )}
 
                 {/* Step 2: Customer */}
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-800/50 border border-gray-700">

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Toggle } from '@/components/ui/toggle';
 import { UpgradeButton } from '@/components/pricing/upgrade-button';
-import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle, RefreshCw, Calendar, CreditCard, Lightbulb, HelpCircle } from 'lucide-react';
+import { Upload, Check, Zap, CheckCircle, AlertCircle, XCircle, RefreshCw, Calendar, CreditCard, Lightbulb, HelpCircle, Search } from 'lucide-react';
 import { HelpPanel, settingsHelp } from '@/components/ui/help-panel';
 import { WorkflowGuide } from '@/components/ui/workflow-guide';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
@@ -935,48 +935,69 @@ export default function SettingsPage() {
           </div>
 
           {/* Help Panel - Sidebar */}
-          <div className="lg:w-80 shrink-0">
+          <div className="lg:w-[420px] xl:w-[480px] shrink-0">
             <div className="lg:sticky lg:top-20 space-y-4">
-              {/* Workflow Guide - App-Ablauf */}
-              <WorkflowGuide />
+              {/* 2x2 Grid für Workflow + Einstellungen-Hilfe */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {/* Workflow Guide - App-Ablauf */}
+                <WorkflowGuide />
 
-              {/* Firmendaten Hilfe */}
-              <HelpPanel
-                tips={settingsHelp.company}
-                title="So nutzt du die Einstellungen"
-                collapsible={false}
-              />
-
-              {/* Quick Tips */}
-              <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-800/30 rounded-2xl p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="p-2 bg-green-500/20 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-green-400" />
-                  </div>
-                  <h3 className="font-semibold text-white">Schnell-Tipps</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-gray-400">
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-400 mt-0.5">•</span>
-                    <span>Alle Änderungen mit <strong className="text-white">Speichern</strong> bestätigen</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-400 mt-0.5">•</span>
-                    <span>Logo & Unterschrift erscheinen auf <strong className="text-white">allen</strong> Dokumenten</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-400 mt-0.5">•</span>
-                    <span>Bezahlte Rechnungen sind automatisch <strong className="text-white">gesperrt</strong></span>
-                  </li>
-                </ul>
+                {/* Firmendaten Hilfe */}
+                <HelpPanel
+                  tips={settingsHelp.company}
+                  title="So nutzt du die Einstellungen"
+                  collapsible={false}
+                />
               </div>
 
-              {/* Keyboard Shortcut */}
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-4">
-                <p className="text-xs text-gray-400 mb-2">Profi-Tipp</p>
-                <p className="text-sm text-gray-300">
-                  Drücke <kbd className="px-2 py-0.5 bg-gray-700 rounded text-xs font-mono">⌘K</kbd> für die Schnellsuche
-                </p>
+              {/* 2x2 Grid für Quick Tips + Keyboard */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {/* Quick Tips */}
+                <div className="bg-gradient-to-br from-green-900/20 to-green-800/10 border border-green-800/30 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 bg-green-500/20 rounded-lg">
+                      <CheckCircle className="h-5 w-5 text-green-400" />
+                    </div>
+                    <h3 className="font-semibold text-white">Schnell-Tipps</h3>
+                  </div>
+                  <ul className="space-y-2 text-sm text-gray-400">
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-400 mt-0.5">•</span>
+                      <span>Änderungen mit <strong className="text-white">Speichern</strong> bestätigen</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-400 mt-0.5">•</span>
+                      <span>Logo & Unterschrift auf <strong className="text-white">allen</strong> Dokumenten</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-green-400 mt-0.5">•</span>
+                      <span>Bezahlte Rechnungen sind <strong className="text-white">gesperrt</strong></span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Keyboard Shortcut */}
+                <div className="bg-gradient-to-br from-purple-900/20 to-purple-800/10 border border-purple-800/30 rounded-2xl p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 bg-purple-500/20 rounded-lg">
+                      <Search className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <h3 className="font-semibold text-white">Tastenkürzel</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-400">Schnellsuche</span>
+                      <kbd className="px-2 py-1 bg-gray-700 rounded text-xs font-mono text-gray-300">⌘K</kbd>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-400">Windows/Linux</span>
+                      <kbd className="px-2 py-1 bg-gray-700 rounded text-xs font-mono text-gray-300">Strg+K</kbd>
+                    </div>
+                    <p className="text-xs text-gray-500 pt-2 border-t border-gray-700/50">
+                      Suche nach Rechnungen, Kunden oder Angeboten
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
