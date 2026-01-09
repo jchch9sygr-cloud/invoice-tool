@@ -8,157 +8,156 @@ import {
   Image,
 } from '@react-pdf/renderer';
 
-// Kompakte Styles für eine Seite
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 15 * 2.835,      // 15mm
-    paddingBottom: 18 * 2.835,   // 18mm für Footer
-    paddingLeft: 25 * 2.835,     // 25mm (DIN 5008)
-    paddingRight: 20 * 2.835,    // 20mm (DIN 5008)
-    fontSize: 9,
+    paddingTop: 57,
+    paddingBottom: 57,
+    paddingLeft: 71,
+    paddingRight: 57,
+    fontSize: 10,
     fontFamily: 'Helvetica',
     color: '#1f2937',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6 * 2.835,
+    marginBottom: 28,
   },
   logo: {
     objectFit: 'contain',
   },
   companyInfo: {
     textAlign: 'right',
-    fontSize: 7,
+    fontSize: 8,
   },
   companyName: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
-    marginBottom: 1,
+    marginBottom: 2,
   },
   recipientBox: {
-    width: 85 * 2.835,
-    minHeight: 18 * 2.835,
-    marginBottom: 3 * 2.835,
+    width: 241,
+    minHeight: 77,
+    marginBottom: 11,
   },
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 4 * 2.835,
+    marginBottom: 24,
   },
   subject: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 700,
-    marginBottom: 4 * 2.835,
+    marginBottom: 24,
   },
   warningBanner: {
     backgroundColor: '#fef3c7',
-    padding: 5,
-    marginBottom: 3 * 2.835,
+    padding: 8,
+    marginBottom: 12,
     borderRadius: 3,
   },
   warningText: {
     color: '#92400e',
-    fontSize: 7.5,
+    fontSize: 8.5,
     textAlign: 'center',
     fontWeight: 700,
   },
   bodySection: {
-    marginBottom: 3 * 2.835,
+    marginBottom: 12,
   },
   bodyText: {
-    fontSize: 9,
-    lineHeight: 1.4,
-    marginBottom: 1,
+    fontSize: 10,
+    lineHeight: 1.5,
+    marginBottom: 2,
   },
   text: {
-    fontSize: 9,
-    marginBottom: 0.5,
+    fontSize: 10,
+    marginBottom: 1,
   },
   textBold: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
-    marginBottom: 0.5,
+    marginBottom: 1,
   },
   textSmall: {
-    fontSize: 7,
-    marginBottom: 0.5,
+    fontSize: 8,
+    marginBottom: 1,
   },
   invoiceDetails: {
-    marginTop: 2 * 2.835,
-    marginBottom: 2 * 2.835,
-    padding: 7,
+    marginTop: 12,
+    marginBottom: 12,
+    padding: 10,
     backgroundColor: '#f3f4f6',
     borderRadius: 3,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 2,
+    marginBottom: 3,
   },
   detailLabel: {
-    fontSize: 8,
+    fontSize: 9,
     color: '#6b7280',
   },
   detailValue: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 600,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 4,
-    paddingTop: 4,
+    marginTop: 6,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: '#d1d5db',
   },
   totalLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: 700,
   },
   totalValue: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: 700,
     color: '#dc2626',
   },
   bankSection: {
-    marginTop: 2 * 2.835,
-    marginBottom: 2 * 2.835,
+    marginTop: 12,
+    marginBottom: 12,
   },
   closingSection: {
-    marginTop: 4 * 2.835,
+    marginTop: 24,
     alignItems: 'flex-start',
   },
   closingText: {
-    fontSize: 9,
-    marginBottom: 3 * 2.835,
+    fontSize: 10,
+    marginBottom: 12,
   },
   greeting: {
-    fontSize: 9,
-    marginBottom: 2 * 2.835,
+    fontSize: 10,
+    marginBottom: 8,
   },
   signature: {
     objectFit: 'contain',
-    marginBottom: 1 * 2.835,
+    marginBottom: 6,
   },
   signatureName: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 700,
   },
   footer: {
     position: 'absolute',
-    bottom: 12 * 2.835,
-    left: 25 * 2.835,
-    right: 20 * 2.835,
+    bottom: 43,
+    left: 71,
+    right: 57,
   },
   footerDivider: {
     borderTopWidth: 0.5,
     borderTopColor: '#d1d5db',
-    paddingTop: 4,
+    paddingTop: 6,
   },
   footerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    fontSize: 6,
+    fontSize: 7,
     color: '#6b7280',
   },
   footerSection: {
@@ -170,7 +169,7 @@ const styles = StyleSheet.create({
   },
   footerLabel: {
     fontWeight: 700,
-    marginBottom: 0.5,
+    marginBottom: 1,
   },
 });
 
@@ -253,18 +252,33 @@ export function ReminderPDFServer({
     return 'Sehr geehrte Damen und Herren';
   };
 
-  // Kürzere Texte für eine Seite
   const getReminderText = () => {
     const salutation = getSalutation();
     switch (level) {
       case 0:
-        return `${salutation},\n\nwir möchten Sie freundlich daran erinnern, dass die oben genannte Rechnung fällig ist. Bitte überweisen Sie den ausstehenden Betrag auf das unten angegebene Konto.\n\nSollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie diese Erinnerung bitte als gegenstandslos.`;
+        return `${salutation},
+
+wir möchten Sie freundlich daran erinnern, dass die oben genannte Rechnung fällig ist. Bitte überweisen Sie den ausstehenden Betrag auf das unten angegebene Konto.
+
+Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie diese Erinnerung bitte als gegenstandslos.`;
       case 1:
-        return `${salutation},\n\nbei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung trotz unserer Zahlungserinnerung noch nicht beglichen wurde.\n\nWir bitten Sie, den ausstehenden Betrag innerhalb von 14 Tagen zu überweisen.`;
+        return `${salutation},
+
+bei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung trotz unserer Zahlungserinnerung noch nicht beglichen wurde.
+
+Wir bitten Sie, den ausstehenden Betrag innerhalb von 14 Tagen zu überweisen.`;
       case 2:
-        return `${salutation},\n\ntrotz unserer bisherigen Erinnerungen ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.\n\nWir fordern Sie hiermit auf, den ausstehenden Betrag innerhalb von 10 Tagen zu begleichen.`;
+        return `${salutation},
+
+trotz unserer bisherigen Erinnerungen ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.
+
+Wir fordern Sie hiermit auf, den ausstehenden Betrag innerhalb von 10 Tagen zu begleichen.`;
       default:
-        return `${salutation},\n\nleider müssen wir feststellen, dass Sie trotz unserer bisherigen Mahnungen den ausstehenden Rechnungsbetrag nicht beglichen haben.\n\nDies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, rechtliche Schritte einzuleiten.`;
+        return `${salutation},
+
+leider müssen wir feststellen, dass Sie trotz unserer bisherigen Mahnungen den ausstehenden Rechnungsbetrag nicht beglichen haben.
+
+Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, rechtliche Schritte einzuleiten.`;
     }
   };
 
@@ -276,14 +290,14 @@ export function ReminderPDFServer({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page} wrap={false}>
+      <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <View>
             {profile.logo_url && (
               <Image
                 src={profile.logo_url}
-                style={[styles.logo, { height: Math.min(profile.logo_size || 35, 35) }]}
+                style={[styles.logo, { height: Math.min(profile.logo_size || 50, 50) }]}
               />
             )}
           </View>
@@ -380,10 +394,10 @@ export function ReminderPDFServer({
           {profile.signature_url ? (
             <Image
               src={profile.signature_url}
-              style={[styles.signature, { height: Math.min(profile.signature_size || 30, 30) }]}
+              style={[styles.signature, { height: profile.signature_size || 50 }]}
             />
           ) : (
-            <View style={{ height: 25, marginTop: 4, marginBottom: 4 }} />
+            <View style={{ height: 50, marginTop: 8, marginBottom: 8 }} />
           )}
           <Text style={styles.signatureName}>{profile.company_name}</Text>
         </View>
