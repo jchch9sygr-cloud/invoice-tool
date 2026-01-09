@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { z } from 'zod';
+
+// Validierung für level Parameter
+const reminderSchema = z.object({
+  level: z.number().int().min(0).max(4),
+});
 
 export async function POST(
   request: NextRequest,
@@ -7,7 +13,21 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { level } = await request.json();
+
+    // Validiere Request Body
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 });
+    }
+
+    const validation = reminderSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({ error: 'Level muss eine Zahl zwischen 0 und 4 sein' }, { status: 400 });
+    }
+
+    const { level } = validation.data;
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -52,18 +72,26 @@ export async function POST(
       throw updateError;
     }
 
-    // TODO: Actually send email if customer has email
-    // For now, just log that a reminder was sent
-    console.log(`Reminder level ${level} sent for invoice ${document.number} to ${document.customer?.email || 'no email'}`);
+    const levelNames = ['Zahlungserinnerung', '1. Mahnung', '2. Mahnung', 'Letzte Mahnung'];
+    const levelName = levelNames[Math.min(level, 3)] || 'Mahnung';
+
+    // Hinweis: Diese Route aktualisiert NUR den Mahnstatus
+    // Für E-Mail-Versand nutze /api/documents/[id]/send-email mit type: 'reminder'
+    const hasEmail = !!document.customer?.email;
 
     return NextResponse.json({
       success: true,
-      message: `${level}. Mahnung gesendet`,
+      message: `${levelName} wurde erfasst`,
+      emailSent: false,
+      hint: hasEmail
+        ? 'Nutze "Per E-Mail senden" für den E-Mail-Versand an den Kunden.'
+        : 'Kunde hat keine E-Mail-Adresse hinterlegt.',
+      customerEmail: document.customer?.email || null,
     });
   } catch (error) {
     console.error('Send reminder error:', error);
     return NextResponse.json(
-      { error: 'Fehler beim Senden der Mahnung' },
+      { error: 'Fehler beim Aktualisieren des Mahnstatus' },
       { status: 500 }
     );
   }

@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: NextRequest) {
   if (!stripe) {
     return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
+  }
+
+  // Auth check - nur eingeloggte User dürfen Sessions verifizieren
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const sessionId = request.nextUrl.searchParams.get('session_id');
@@ -14,6 +23,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    // Sicherheitscheck: Session muss zum eingeloggten User gehören
+    if (session.metadata?.user_id !== user.id) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
 
     if (session.payment_status === 'paid' || session.status === 'complete') {
       return NextResponse.json({

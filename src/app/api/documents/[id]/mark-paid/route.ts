@@ -61,7 +61,8 @@ export async function POST(
         paid_at: new Date().toISOString(),
         profile_snapshot: profileSnapshot,
       })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (updateError) {
       throw updateError;
