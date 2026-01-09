@@ -248,12 +248,18 @@ export default function RemindersPage() {
         body: JSON.stringify({ level: reminderLevel }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         await loadOverdueInvoices();
         setSelectedInvoice(null);
+      } else {
+        // Zeige Fehler im Email-Modal (benutze existierenden Error-State)
+        setEmailError(data.error || 'Fehler beim Aktualisieren des Mahnstatus');
       }
     } catch (error) {
       console.error('Failed to mark reminder as sent:', error);
+      setEmailError('Netzwerkfehler beim Aktualisieren des Mahnstatus');
     }
   };
 

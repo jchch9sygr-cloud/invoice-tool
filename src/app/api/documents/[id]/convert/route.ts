@@ -68,7 +68,14 @@ export async function POST(
 
     // Copy line items
     if (quote.line_items && quote.line_items.length > 0) {
-      const lineItemsToInsert = quote.line_items.map((item: any, index: number) => ({
+      interface LineItem {
+        description: string;
+        quantity: number;
+        unit: string;
+        unit_price: number;
+      }
+
+      const lineItemsToInsert = (quote.line_items as LineItem[]).map((item, index) => ({
         document_id: invoice.id,
         description: item.description,
         quantity: item.quantity,
@@ -82,14 +89,26 @@ export async function POST(
         .insert(lineItemsToInsert);
 
       if (itemsError) {
-        // Rollback: delete the created invoice
-        await supabase.from('documents').delete().eq('id', invoice.id);
+        // Rollback: delete the created invoice (mit user_id check)
+        const { error: rollbackError } = await supabase
+          .from('documents')
+          .delete()
+          .eq('id', invoice.id)
+          .eq('user_id', user.id);
+
+        if (rollbackError) {
+          console.error('Rollback failed after line_items error:', rollbackError);
+        }
         throw itemsError;
       }
     }
 
     // Increment document count for subscription
-    await supabase.rpc('increment_document_count', { user_uuid: user.id });
+    const { error: rpcError } = await supabase.rpc('increment_document_count', { user_uuid: user.id });
+    if (rpcError) {
+      console.error('Failed to increment document count:', rpcError);
+      // Nicht abbrechen - Rechnung wurde erstellt, nur der Zähler ist falsch
+    }
 
     return NextResponse.json({
       success: true,

@@ -5,6 +5,14 @@ import { SimpleReminderEmail } from '@/components/emails/simple-reminder-email';
 import { ReminderPDFServer } from '@/components/pdf/reminder-pdf-server';
 import { createElement } from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
+import { z } from 'zod';
+
+// Input Validierung
+const sendEmailSchema = z.object({
+  email: z.string().email('Ungültige E-Mail-Adresse'),
+  type: z.enum(['invoice', 'reminder']).optional().default('invoice'),
+  level: z.number().int().min(0).max(4).optional().default(0),
+});
 
 export async function POST(
   request: NextRequest,
@@ -12,7 +20,23 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const { email, type, level } = await request.json();
+
+    // Parse und validiere Request Body
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Ungültiger Request-Body' }, { status: 400 });
+    }
+
+    const validation = sendEmailSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json({
+        error: validation.error.issues[0]?.message || 'Ungültige Eingabe'
+      }, { status: 400 });
+    }
+
+    const { email, type, level } = validation.data;
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -20,15 +44,17 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!email) {
-      return NextResponse.json({ error: 'E-Mail-Adresse erforderlich' }, { status: 400 });
-    }
-
     // Check if Resend API key is configured
     if (!process.env.RESEND_API_KEY) {
       return NextResponse.json({
         error: 'E-Mail-Service nicht konfiguriert. Bitte RESEND_API_KEY in den Umgebungsvariablen setzen.'
       }, { status: 500 });
+    }
+
+    // Check if FROM_EMAIL is configured (not using default onboarding domain)
+    const fromEmail = process.env.RESEND_FROM_EMAIL;
+    if (!fromEmail || fromEmail.includes('onboarding@resend.dev')) {
+      console.warn('RESEND_FROM_EMAIL not configured or using onboarding domain');
     }
 
     // Verify document belongs to user
@@ -115,10 +141,19 @@ export async function POST(
     const senderName = profile?.company_name || 'RechnungsBlitz';
     const replyToEmail = profile?.email || undefined;
 
+    // Extrahiere Email-Adresse aus FROM_EMAIL (Format: "Name <email@domain.com>")
+    const extractEmail = (emailStr: string): string => {
+      const match = emailStr.match(/<(.+)>/);
+      return match ? match[1] : emailStr;
+    };
+    const senderEmail = extractEmail(FROM_EMAIL);
+
     // Send email using Resend with simple template
     const resend = getResend();
+    console.log('[Email] Sending from:', `${senderName} <${senderEmail}>`, 'to:', email);
+
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: `${senderName} <${FROM_EMAIL.split('<')[1]?.replace('>', '') || 'noreply@resend.dev'}>`,
+      from: `${senderName} <${senderEmail}>`,
       replyTo: replyToEmail,
       to: email,
       subject,
@@ -133,9 +168,22 @@ export async function POST(
 
     if (emailError) {
       console.error('Resend error:', emailError);
-      return NextResponse.json({
-        error: 'E-Mail konnte nicht gesendet werden: ' + emailError.message
-      }, { status: 500 });
+
+      // Bessere Fehlermeldungen basierend auf Fehlertyp
+      let errorMessage = 'E-Mail konnte nicht gesendet werden';
+      const errMsg = emailError.message?.toLowerCase() || '';
+
+      if (errMsg.includes('domain') || errMsg.includes('not verified')) {
+        errorMessage = 'Sender-Domain nicht verifiziert. Bitte RESEND_FROM_EMAIL mit einer verifizierten Domain konfigurieren.';
+      } else if (errMsg.includes('rate') || errMsg.includes('limit')) {
+        errorMessage = 'E-Mail-Limit erreicht. Bitte später versuchen.';
+      } else if (errMsg.includes('invalid') && errMsg.includes('email')) {
+        errorMessage = 'Ungültige Empfänger-E-Mail-Adresse.';
+      } else if (emailError.message) {
+        errorMessage = `E-Mail-Fehler: ${emailError.message}`;
+      }
+
+      return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 
     console.log('Email sent successfully:', emailData?.id, 'with PDF:', !!pdfBuffer, 'PDF size:', pdfBuffer?.length || 0);
@@ -153,20 +201,29 @@ export async function POST(
     }
 
     if (Object.keys(updates).length > 0) {
-      await supabase
+      const { error: updateError } = await supabase
         .from('documents')
         .update(updates)
         .eq('id', id)
         .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Document update error after email sent:', updateError);
+        // Email wurde gesendet, aber Status konnte nicht aktualisiert werden
+      }
     }
 
     // Also update customer email if different
     if (document.customer && email !== document.customer.email) {
-      await supabase
+      const { error: customerError } = await supabase
         .from('customers')
         .update({ email })
         .eq('id', document.customer.id)
         .eq('user_id', user.id);
+
+      if (customerError) {
+        console.error('Customer email update error:', customerError);
+      }
     }
 
     return NextResponse.json({

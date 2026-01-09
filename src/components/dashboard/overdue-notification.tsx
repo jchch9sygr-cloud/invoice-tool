@@ -101,6 +101,7 @@ export function OverdueNotification() {
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [settings, setSettings] = useState<ReminderSettings>({
     reminder_days_first: 7,
@@ -113,7 +114,9 @@ export function OverdueNotification() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Heute als ISO-Datum (für Vergleich mit due_date)
     const today = new Date().toISOString().split('T')[0];
+    console.log('[OverdueNotification] Loading invoices with due_date <', today);
 
     // Lade Einstellungen und Rechnungen parallel
     const [{ data: profileData }, { data, error }] = await Promise.all([
@@ -137,15 +140,25 @@ export function OverdueNotification() {
       });
     }
 
-    if (!error && data) {
-      // Nur Rechnungen zeigen, bei denen eine Mahnung/Erinnerung fällig ist
-      const dueInvoices = (data as unknown as OverdueInvoice[]).filter(isReminderDue);
-      setOverdueInvoices(dueInvoices);
+    if (error) {
+      console.error('[OverdueNotification] Query error:', error);
+      return;
+    }
+
+    if (data) {
+      // ALLE überfälligen Rechnungen anzeigen (nicht nur die mit fälligen Mahnungen)
+      const allOverdueInvoices = data as unknown as OverdueInvoice[];
+      console.log('[OverdueNotification] Found overdue invoices:', allOverdueInvoices.length);
+      setOverdueInvoices(allOverdueInvoices);
 
       // Popup automatisch anzeigen wenn überfällige Rechnungen vorhanden
-      // Aber nur einmal pro Session (localStorage check)
+      // Aber nur einmal pro Session (sessionStorage check)
       const sessionKey = `overdue_popup_shown_${new Date().toDateString()}`;
-      if (dueInvoices.length > 0 && !sessionStorage.getItem(sessionKey)) {
+      const alreadyShown = sessionStorage.getItem(sessionKey);
+      console.log('[OverdueNotification] Popup check - invoices:', allOverdueInvoices.length, 'alreadyShown:', alreadyShown);
+
+      if (allOverdueInvoices.length > 0 && !alreadyShown) {
+        console.log('[OverdueNotification] Showing popup in 1 second...');
         setTimeout(() => {
           setShowPopup(true);
           sessionStorage.setItem(sessionKey, 'true');
@@ -162,6 +175,7 @@ export function OverdueNotification() {
     setSelectedInvoice(invoice);
     setEmail(invoice.customer?.email || '');
     setSent(false);
+    setSendError(null);
     setShowModal(true);
   };
 
@@ -169,6 +183,7 @@ export function OverdueNotification() {
     if (!selectedInvoice || !email) return;
 
     setSending(true);
+    setSendError(null);
     try {
       const response = await fetch(`/api/documents/${selectedInvoice.id}/send-email`, {
         method: 'POST',
@@ -179,6 +194,8 @@ export function OverdueNotification() {
           level: selectedInvoice.reminder_count || 0,
         }),
       });
+
+      const data = await response.json();
 
       if (response.ok) {
         // Diese Rechnung aus der Liste entfernen (wird erst bei nächstem Intervall wieder angezeigt)
@@ -191,9 +208,12 @@ export function OverdueNotification() {
           setSent(false);
           setSelectedInvoice(null);
         }, 1500);
+      } else {
+        setSendError(data.error || 'E-Mail konnte nicht gesendet werden');
       }
     } catch (error) {
       console.error('Error sending reminder:', error);
+      setSendError('Netzwerkfehler beim Senden der E-Mail');
     } finally {
       setSending(false);
     }
@@ -411,6 +431,16 @@ export function OverdueNotification() {
                   <p className="text-green-400 text-sm flex items-center gap-2">
                     <Mail className="h-4 w-4" />
                     Zahlungserinnerung wurde erfolgreich gesendet!
+                  </p>
+                </div>
+              )}
+
+              {/* Error message */}
+              {sendError && (
+                <div className="p-3 bg-red-900/30 border border-red-800 rounded-lg">
+                  <p className="text-red-400 text-sm flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    {sendError}
                   </p>
                 </div>
               )}
