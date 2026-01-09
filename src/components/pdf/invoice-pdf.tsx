@@ -8,31 +8,27 @@ import {
   StyleSheet,
   Image,
 } from '@react-pdf/renderer';
-import { formatCurrency, formatDate, getKleinunternehmerText, calculateTotal, calculateVat, calculateGrossTotal } from '@/lib/utils';
+import { formatCurrency, formatDate, getKleinunternehmerText } from '@/lib/utils';
 import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@/types/database';
 
-// Konstante für mm zu pt Umrechnung (DIN A4)
+// Konstante für mm zu pt Umrechnung (DIN A4: 210 x 297 mm)
 const MM = 2.835;
 
-// Dynamische Styles basierend auf Schriftgröße
-const createStyles = (fontSize: number, compact: boolean = false) => {
-  const spacing = compact ? 0.75 : 1; // Reduziere Abstände wenn kompakt
-
-  return StyleSheet.create({
+// Feste Styles - konsistent mit reminder-pdf für einheitliches Erscheinungsbild
+const styles = StyleSheet.create({
   page: {
     paddingTop: 15 * MM,         // 15mm
     paddingBottom: 25 * MM,      // 25mm für Footer-Bereich
     paddingLeft: 25 * MM,        // 25mm (DIN 5008)
     paddingRight: 20 * MM,       // 20mm (DIN 5008)
-    fontSize: fontSize,
+    fontSize: 10,
     fontFamily: 'Helvetica',
     color: '#1f2937',
   },
-  // Kopfbereich mit Logo rechts
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8 * MM * spacing,    // 8mm Abstand
+    marginBottom: 8 * MM,
   },
   logo: {
     objectFit: 'contain',
@@ -43,72 +39,58 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   },
   companyInfo: {
     textAlign: 'right',
-    fontSize: fontSize * 0.8,
+    fontSize: 8,
   },
   companyName: {
-    fontSize: fontSize,
+    fontSize: 10,
     fontWeight: 700,
     marginBottom: 1,
   },
-  // Rücksendezeile (klein, über Empfänger)
-  senderLine: {
-    fontSize: fontSize * 0.6,
-    color: '#6b7280',
-    marginBottom: 1.5 * MM,
-    paddingBottom: 0.5 * MM,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#9ca3af',
-  },
-  // Empfängerfeld nach DIN 5008
   recipientBox: {
     width: 85 * MM,
-    minHeight: 22 * MM * spacing,     // Reduziert
-    marginBottom: 3 * MM * spacing,
+    minHeight: 20 * MM,
+    marginBottom: 3 * MM,
   },
-  // Ort, Datum rechts ausgerichtet
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 6 * MM * spacing,
+    marginBottom: 5 * MM,
   },
-  // Betreff (fett, nach DIN 5008)
   subject: {
-    fontSize: fontSize * 1.1,
+    fontSize: 11,
     fontWeight: 700,
-    marginBottom: 6 * MM * spacing,
+    marginBottom: 5 * MM,
   },
-  // Brieftext
   bodySection: {
-    marginBottom: 3 * MM * spacing,
+    marginBottom: 3 * MM,
   },
   bodyText: {
-    fontSize: fontSize,
+    fontSize: 10,
     lineHeight: 1.4,
     marginBottom: 1,
   },
   text: {
-    fontSize: fontSize,
+    fontSize: 10,
     marginBottom: 0.5,
   },
   textBold: {
-    fontSize: fontSize,
+    fontSize: 10,
     fontWeight: 700,
     marginBottom: 0.5,
   },
   textSmall: {
-    fontSize: fontSize * 0.8,
+    fontSize: 8,
     marginBottom: 0.5,
   },
-  // Positionstabelle
   table: {
-    marginTop: 3 * MM * spacing,
-    marginBottom: 3 * MM * spacing,
+    marginTop: 3 * MM,
+    marginBottom: 3 * MM,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#f3f4f6',
     paddingVertical: 4,
     paddingHorizontal: 4,
-    fontSize: fontSize * 0.8,
+    fontSize: 8,
     fontWeight: 600,
   },
   tableRow: {
@@ -117,7 +99,7 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     paddingHorizontal: 4,
     borderBottomWidth: 0.5,
     borderBottomColor: '#e5e7eb',
-    fontSize: fontSize,
+    fontSize: 10,
   },
   colDescription: {
     width: '75%',
@@ -126,9 +108,8 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     width: '25%',
     textAlign: 'right',
   },
-  // Summenblock rechts
   totalSection: {
-    marginTop: 3 * MM * spacing,
+    marginTop: 3 * MM,
     alignItems: 'flex-end',
   },
   totalRow: {
@@ -137,7 +118,7 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     width: 280,
     paddingVertical: 2,
     paddingHorizontal: 4,
-    fontSize: fontSize,
+    fontSize: 10,
   },
   totalRowBorder: {
     flexDirection: 'row',
@@ -150,52 +131,49 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     marginTop: 2,
   },
   totalLabel: {
-    fontSize: fontSize,
+    fontSize: 10,
   },
   totalLabelBold: {
     fontWeight: 700,
-    fontSize: fontSize * 1.1,
+    fontSize: 11,
   },
   totalValue: {
-    fontSize: fontSize,
+    fontSize: 10,
   },
   totalValueBold: {
     fontWeight: 700,
-    fontSize: fontSize * 1.1,
+    fontSize: 11,
   },
-  // Zahlungshinweis
   paymentInfo: {
-    marginTop: 6 * MM * spacing,
-    fontSize: fontSize,
+    marginTop: 5 * MM,
+    fontSize: 10,
     lineHeight: 1.4,
   },
   kleinunternehmer: {
-    marginTop: 3 * MM * spacing,
-    fontSize: fontSize * 0.8,
+    marginTop: 3 * MM,
+    fontSize: 8,
     color: '#6b7280',
     fontStyle: 'italic',
   },
-  // Grußformel (DIN 5008: 1 Leerzeile vor Gruß)
   closingSection: {
-    marginTop: 6 * MM * spacing,
+    marginTop: 5 * MM,
     alignItems: 'flex-start',
   },
   closingText: {
-    fontSize: fontSize,
-    marginBottom: 3 * MM * spacing,
+    fontSize: 10,
+    marginBottom: 3 * MM,
   },
   greeting: {
-    fontSize: fontSize,
+    fontSize: 10,
     marginBottom: 2 * MM,
   },
   signatureName: {
-    fontSize: fontSize,
+    fontSize: 10,
     fontWeight: 700,
   },
-  // Fußzeile - absolut positioniert im paddingBottom-Bereich
   footer: {
     position: 'absolute',
-    bottom: 10 * MM,             // 10mm vom unteren Rand
+    bottom: 10 * MM,
     left: 25 * MM,
     right: 20 * MM,
   },
@@ -222,7 +200,6 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     marginBottom: 0.5,
   },
 });
-};
 
 interface InvoicePDFProps {
   document: InvoiceDocument;
@@ -232,13 +209,12 @@ interface InvoicePDFProps {
 }
 
 export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePDFProps) {
-  // Calculate positions total
+  // Calculate totals
   const positionsTotal = lineItems.reduce(
     (sum, item) => sum + (item.quantity * item.unit_price),
     0
   );
 
-  // Calculate courtage if present
   const hasCourtage = document.courtage_base_amount != null && document.courtage_percentage != null;
   const courtageAmount = hasCourtage
     ? (document.courtage_base_amount! * document.courtage_percentage!) / 100
@@ -250,36 +226,16 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
   const grossTotal = netTotal + vatAmount;
   const isInvoice = document.type === 'invoice';
 
-  // Dynamische Schriftgröße basierend auf Inhaltsmenge
-  const introLength = (document.introduction_text || '').length;
-  const notesLength = (document.notes || '').length;
-  const itemCount = lineItems.length;
-  const totalContentLength = introLength + notesLength + (itemCount * 30);
-
-  // Berechne optimale Schriftgröße und ob kompakt
-  let fontSize = 10;
-  let compact = false;
-
-  if (itemCount > 8 || totalContentLength > 600) {
-    fontSize = 8;
-    compact = true;
-  } else if (itemCount > 5 || totalContentLength > 400) {
-    fontSize = 9;
-    compact = true;
-  }
-
-  const styles = createStyles(fontSize, compact);
-
   return (
     <Document>
       <Page size="A4" style={styles.page} wrap={false}>
-        {/* Kopfbereich: Logo links, Absenderdaten rechts */}
+        {/* Header */}
         <View style={styles.header}>
           <View>
             {profile.logo_url && (
               <Image
                 src={profile.logo_url}
-                style={[styles.logo, { height: Math.min(profile.logo_size || 50, compact ? 40 : 50) }]}
+                style={[styles.logo, { height: Math.min(profile.logo_size || 45, 45) }]}
               />
             )}
           </View>
@@ -293,7 +249,7 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           </View>
         </View>
 
-        {/* Empfängeradresse (ohne Rücksendezeile für Fensterkuvert) */}
+        {/* Recipient */}
         <View style={styles.recipientBox}>
           {customer ? (
             <>
@@ -307,19 +263,19 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           )}
         </View>
 
-        {/* Ort, Datum - rechts unter Empfänger */}
+        {/* Date */}
         <View style={styles.dateLineRight}>
           <Text style={styles.text}>
             {document.location ? `${document.location}, ` : ''}{formatDate(document.date)}
           </Text>
         </View>
 
-        {/* Betreff (DIN 5008: fett, 2 Leerzeilen Abstand) */}
+        {/* Subject */}
         <Text style={styles.subject}>
           {isInvoice ? 'Rechnung' : 'Angebot'} Nr. {document.number}
         </Text>
 
-        {/* Brieftext: Anrede + Einleitung */}
+        {/* Body */}
         <View style={styles.bodySection}>
           <Text style={styles.bodyText}>{document.salutation || 'Sehr geehrte Damen und Herren,'}</Text>
           {document.introduction_text && (
@@ -327,7 +283,7 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           )}
         </View>
 
-        {/* Positionstabelle - Vereinfacht */}
+        {/* Table */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={styles.colDescription}>Beschreibung</Text>
@@ -343,25 +299,22 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           ))}
         </View>
 
-        {/* Summenblock rechts */}
+        {/* Totals */}
         <View style={styles.totalSection}>
-          {/* Nettobetrag (Positionen) */}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Nettobetrag:</Text>
             <Text style={styles.totalValue}>{formatCurrency(positionsTotal)}</Text>
           </View>
 
-          {/* Courtage Zeile */}
           {hasCourtage && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>
-                Courtage von {document.courtage_percentage}% von {formatCurrency(document.courtage_base_amount!)}:
+                Courtage ({document.courtage_percentage}%):
               </Text>
               <Text style={styles.totalValue}>{formatCurrency(courtageAmount)}</Text>
             </View>
           )}
 
-          {/* USt. */}
           {vatRate > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>{vatRate}% USt.:</Text>
@@ -369,24 +322,23 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
             </View>
           )}
 
-          {/* Gesamtbetrag */}
           <View style={styles.totalRowBorder}>
             <Text style={styles.totalLabelBold}>Gesamtbetrag:</Text>
             <Text style={styles.totalValueBold}>{formatCurrency(grossTotal)}</Text>
           </View>
         </View>
 
-        {/* Zahlungshinweis */}
+        {/* Notes */}
         {document.notes && (
           <Text style={styles.paymentInfo}>{document.notes}</Text>
         )}
 
-        {/* Kleinunternehmer-Hinweis */}
+        {/* Kleinunternehmer */}
         {profile.is_kleinunternehmer && (
           <Text style={styles.kleinunternehmer}>{getKleinunternehmerText()}</Text>
         )}
 
-        {/* Grußformel (DIN 5008) */}
+        {/* Closing */}
         <View style={styles.closingSection}>
           <Text style={styles.closingText}>
             {isInvoice
@@ -397,18 +349,17 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           {profile.signature_url ? (
             <Image
               src={profile.signature_url}
-              style={[styles.signature, { height: Math.min(profile.signature_size || 40, compact ? 30 : 40) }]}
+              style={[styles.signature, { height: Math.min(profile.signature_size || 35, 40) }]}
             />
           ) : (
-            /* Platz für handschriftliche Unterschrift */
-            <View style={{ height: compact ? 25 : 35, marginTop: 4, marginBottom: 4 }} />
+            <View style={{ height: 30, marginTop: 3, marginBottom: 3 }} />
           )}
           <Text style={styles.signatureName}>
             {document.sender_name || profile.company_name}
           </Text>
         </View>
 
-        {/* Fußzeile mit Kontakt + Bankverbindung */}
+        {/* Footer */}
         <View style={styles.footer}>
           <View style={styles.footerDivider}>
             <View style={styles.footerContent}>

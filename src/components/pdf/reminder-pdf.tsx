@@ -11,30 +11,24 @@ import {
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@/types/database';
 
-// Base font size - will be adjusted if content is too long
-const BASE_FONT_SIZE = 10;
-
-// Konstante für mm zu pt Umrechnung (DIN A4)
+// Konstante für mm zu pt Umrechnung (DIN A4: 210 x 297 mm)
 const MM = 2.835;
 
-// DIN 5008 Briefstandard - konsistent mit invoice-pdf.tsx
-const createStyles = (fontSize: number, compact: boolean = false) => {
-  const spacing = compact ? 0.75 : 1;
-
-  return StyleSheet.create({
+// Feste Styles - konsistent mit invoice-pdf für einheitliches Erscheinungsbild
+const styles = StyleSheet.create({
   page: {
     paddingTop: 15 * MM,         // 15mm
     paddingBottom: 25 * MM,      // 25mm für Footer-Bereich
     paddingLeft: 25 * MM,        // 25mm (DIN 5008)
     paddingRight: 20 * MM,       // 20mm (DIN 5008)
-    fontSize: fontSize,
+    fontSize: 10,
     fontFamily: 'Helvetica',
     color: '#1f2937',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8 * MM * spacing,
+    marginBottom: 8 * MM,
   },
   logo: {
     objectFit: 'contain',
@@ -45,63 +39,63 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   },
   companyInfo: {
     textAlign: 'right',
-    fontSize: fontSize * 0.8,
+    fontSize: 8,
   },
   companyName: {
-    fontSize: fontSize,
+    fontSize: 10,
     fontWeight: 700,
     marginBottom: 1,
   },
   recipientBox: {
     width: 85 * MM,
-    minHeight: 20 * MM * spacing,
-    marginBottom: 3 * MM * spacing,
+    minHeight: 20 * MM,
+    marginBottom: 3 * MM,
   },
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 5 * MM * spacing,
+    marginBottom: 5 * MM,
   },
   subject: {
-    fontSize: fontSize * 1.1,
+    fontSize: 11,
     fontWeight: 700,
-    marginBottom: 5 * MM * spacing,
+    marginBottom: 5 * MM,
   },
   warningBanner: {
     backgroundColor: '#fef3c7',
     padding: 6,
-    marginBottom: 3 * MM * spacing,
+    marginBottom: 3 * MM,
     borderRadius: 3,
   },
   warningText: {
     color: '#92400e',
-    fontSize: fontSize * 0.85,
+    fontSize: 8,
     textAlign: 'center',
     fontWeight: 700,
   },
   bodySection: {
-    marginBottom: 3 * MM * spacing,
+    marginBottom: 3 * MM,
   },
   bodyText: {
-    fontSize: fontSize,
+    fontSize: 10,
     lineHeight: 1.4,
     marginBottom: 1,
   },
   text: {
-    fontSize: fontSize,
+    fontSize: 10,
     marginBottom: 0.5,
   },
   textBold: {
-    fontSize: fontSize,
+    fontSize: 10,
     fontWeight: 700,
     marginBottom: 0.5,
   },
   textSmall: {
-    fontSize: fontSize * 0.8,
+    fontSize: 8,
     marginBottom: 0.5,
   },
   invoiceDetails: {
-    marginTop: 3 * MM * spacing,
-    marginBottom: 3 * MM * spacing,
+    marginTop: 3 * MM,
+    marginBottom: 3 * MM,
     padding: 8,
     backgroundColor: '#f3f4f6',
     borderRadius: 3,
@@ -112,11 +106,11 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     marginBottom: 2,
   },
   detailLabel: {
-    fontSize: fontSize * 0.9,
+    fontSize: 9,
     color: '#6b7280',
   },
   detailValue: {
-    fontSize: fontSize,
+    fontSize: 10,
     fontWeight: 600,
   },
   totalRow: {
@@ -128,37 +122,37 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     borderTopColor: '#d1d5db',
   },
   totalLabel: {
-    fontSize: fontSize * 1.1,
+    fontSize: 11,
     fontWeight: 700,
   },
   totalValue: {
-    fontSize: fontSize * 1.1,
+    fontSize: 12,
     fontWeight: 700,
     color: '#dc2626',
   },
   bankSection: {
-    marginTop: 3 * MM * spacing,
-    marginBottom: 3 * MM * spacing,
+    marginTop: 3 * MM,
+    marginBottom: 3 * MM,
   },
   closingSection: {
-    marginTop: 5 * MM * spacing,
+    marginTop: 5 * MM,
     alignItems: 'flex-start',
   },
   closingText: {
-    fontSize: fontSize,
-    marginBottom: 3 * MM * spacing,
+    fontSize: 10,
+    marginBottom: 3 * MM,
   },
   greeting: {
-    fontSize: fontSize,
+    fontSize: 10,
     marginBottom: 2 * MM,
   },
   signatureName: {
-    fontSize: fontSize,
+    fontSize: 10,
     fontWeight: 700,
   },
   footer: {
     position: 'absolute',
-    bottom: 10 * MM,             // 10mm vom unteren Rand
+    bottom: 10 * MM,
     left: 25 * MM,
     right: 20 * MM,
   },
@@ -185,7 +179,6 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     marginBottom: 0.5,
   },
 });
-};
 
 interface ReminderPDFProps {
   document: InvoiceDocument;
@@ -200,7 +193,6 @@ interface ReminderPDFProps {
 
 export function ReminderPDF({
   document,
-  lineItems,
   profile,
   customer,
   level,
@@ -268,21 +260,6 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
   const reminderText = customText || getDefaultText();
   const closingText = customClosing || getDefaultClosing();
 
-  // Calculate font size based on text length - smaller font for longer text
-  const textLength = reminderText.length + closingText.length;
-  let fontSize = BASE_FONT_SIZE;
-  let compact = false;
-
-  if (textLength > 700) {
-    fontSize = 8;
-    compact = true;
-  } else if (textLength > 500) {
-    fontSize = 9;
-    compact = true;
-  }
-
-  const styles = createStyles(fontSize, compact);
-
   return (
     <Document>
       <Page size="A4" style={styles.page} wrap={false}>
@@ -292,7 +269,7 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
             {profile.logo_url && (
               <Image
                 src={profile.logo_url}
-                style={[styles.logo, { height: Math.min(profile.logo_size || 45, compact ? 35 : 45) }]}
+                style={[styles.logo, { height: Math.min(profile.logo_size || 45, 45) }]}
               />
             )}
           </View>
@@ -382,18 +359,17 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
           <Text style={styles.text}>Verwendungszweck: {document.number}</Text>
         </View>
 
-        {/* Grußformel (DIN 5008 - konsistent mit Rechnung) */}
+        {/* Closing */}
         <View style={styles.closingSection}>
           <Text style={styles.closingText}>{closingText}</Text>
           <Text style={styles.greeting}>Mit freundlichen Grüßen</Text>
           {profile.signature_url ? (
             <Image
               src={profile.signature_url}
-              style={[styles.signature, { height: Math.min(profile.signature_size || 40, compact ? 30 : 40) }]}
+              style={[styles.signature, { height: Math.min(profile.signature_size || 35, 40) }]}
             />
           ) : (
-            /* Platz für handschriftliche Unterschrift */
-            <View style={{ height: compact ? 25 : 35, marginTop: 4, marginBottom: 4 }} />
+            <View style={{ height: 30, marginTop: 3, marginBottom: 3 }} />
           )}
           <Text style={styles.signatureName}>{profile.company_name}</Text>
         </View>
