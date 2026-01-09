@@ -8,12 +8,13 @@ import {
   Image,
 } from '@react-pdf/renderer';
 
+// Optimiert nach Lexoffice/SevDesk Standard - kompakt aber professionell
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 57,
-    paddingBottom: 57,
-    paddingLeft: 71,
-    paddingRight: 57,
+    paddingTop: 45,           // ~16mm (reduziert von 20mm)
+    paddingBottom: 50,        // ~18mm für Footer
+    paddingLeft: 71,          // 25mm DIN 5008
+    paddingRight: 57,         // 20mm DIN 5008
     fontSize: 10,
     fontFamily: 'Helvetica',
     color: '#1f2937',
@@ -21,7 +22,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 28,
+    marginBottom: 18,         // Reduziert von 28
   },
   logo: {
     objectFit: 'contain',
@@ -37,17 +38,17 @@ const styles = StyleSheet.create({
   },
   recipientBox: {
     width: 241,
-    minHeight: 77,
-    marginBottom: 11,
+    minHeight: 55,            // Reduziert von 77
+    marginBottom: 8,          // Reduziert von 11
   },
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 24,
+    marginBottom: 14,         // Reduziert von 24
   },
   subject: {
     fontSize: 11,
     fontWeight: 700,
-    marginBottom: 24,
+    marginBottom: 14,         // Reduziert von 24
   },
   warningBanner: {
     backgroundColor: '#fef3c7',
@@ -62,11 +63,11 @@ const styles = StyleSheet.create({
     fontWeight: 700,
   },
   bodySection: {
-    marginBottom: 12,
+    marginBottom: 10,         // Reduziert von 12
   },
   bodyText: {
     fontSize: 10,
-    lineHeight: 1.5,
+    lineHeight: 1.35,         // Reduziert von 1.5 (Lexoffice-Standard)
     marginBottom: 2,
   },
   text: {
@@ -83,9 +84,9 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   invoiceDetails: {
-    marginTop: 12,
-    marginBottom: 12,
-    padding: 10,
+    marginTop: 8,             // Reduziert von 12
+    marginBottom: 8,          // Reduziert von 12
+    padding: 8,               // Reduziert von 10
     backgroundColor: '#f3f4f6',
     borderRadius: 3,
   },
@@ -120,20 +121,20 @@ const styles = StyleSheet.create({
     color: '#dc2626',
   },
   bankSection: {
-    marginTop: 12,
-    marginBottom: 12,
+    marginTop: 8,             // Reduziert von 12
+    marginBottom: 8,          // Reduziert von 12
   },
   closingSection: {
-    marginTop: 24,
+    marginTop: 14,            // Reduziert von 24
     alignItems: 'flex-start',
   },
   closingText: {
     fontSize: 10,
-    marginBottom: 12,
+    marginBottom: 8,          // Reduziert von 12
   },
   greeting: {
     fontSize: 10,
-    marginBottom: 8,
+    marginBottom: 4,          // Reduziert von 8
   },
   signature: {
     objectFit: 'contain',
@@ -290,14 +291,14 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} wrap={false}>
         {/* Header */}
         <View style={styles.header}>
           <View>
             {profile.logo_url && (
               <Image
                 src={profile.logo_url}
-                style={[styles.logo, { height: Math.min(profile.logo_size || 50, 50) }]}
+                style={[styles.logo, { height: Math.min(profile.logo_size || 40, 40) }]}
               />
             )}
           </View>
@@ -370,21 +371,11 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
           </View>
         </View>
 
-        {/* Payment Info */}
+        {/* Payment Info - kompakt wie Lexoffice (Details im Footer) */}
         <View style={styles.bankSection}>
-          <Text style={styles.bodyText}>
-            Bitte überweisen Sie den Betrag auf folgendes Konto:
+          <Text style={styles.text}>
+            Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer {document.number} auf das im Briefkopf angegebene Konto.
           </Text>
-          {profile.bank_name && (
-            <Text style={styles.text}>Bank: {profile.bank_name}</Text>
-          )}
-          {profile.iban && (
-            <Text style={styles.text}>IBAN: {profile.iban}</Text>
-          )}
-          {profile.bic && (
-            <Text style={styles.text}>BIC: {profile.bic}</Text>
-          )}
-          <Text style={styles.text}>Verwendungszweck: {document.number}</Text>
         </View>
 
         {/* Closing */}
@@ -394,10 +385,10 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
           {profile.signature_url ? (
             <Image
               src={profile.signature_url}
-              style={[styles.signature, { height: profile.signature_size || 50 }]}
+              style={[styles.signature, { height: Math.min(profile.signature_size || 40, 40) }]}
             />
           ) : (
-            <View style={{ height: 50, marginTop: 8, marginBottom: 8 }} />
+            <View style={{ height: 30, marginTop: 4, marginBottom: 4 }} />
           )}
           <Text style={styles.signatureName}>{profile.company_name}</Text>
         </View>
