@@ -14,16 +14,19 @@ import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@
 // Base font size - will be adjusted if content is too long
 const BASE_FONT_SIZE = 10;
 
+// Konstante für mm zu pt Umrechnung (DIN A4)
+const MM = 2.835;
+
 // DIN 5008 Briefstandard - konsistent mit invoice-pdf.tsx
 const createStyles = (fontSize: number, compact: boolean = false) => {
-  const spacing = compact ? 0.7 : 1;
+  const spacing = compact ? 0.75 : 1;
 
   return StyleSheet.create({
   page: {
-    paddingTop: 15 * 2.835,      // 15mm (reduziert)
-    paddingBottom: 18 * 2.835,   // 18mm für Footer
-    paddingLeft: 25 * 2.835,     // 25mm (DIN 5008)
-    paddingRight: 20 * 2.835,    // 20mm (DIN 5008)
+    paddingTop: 15 * MM,         // 15mm
+    paddingBottom: 25 * MM,      // 25mm für Footer-Bereich
+    paddingLeft: 25 * MM,        // 25mm (DIN 5008)
+    paddingRight: 20 * MM,       // 20mm (DIN 5008)
     fontSize: fontSize,
     fontFamily: 'Helvetica',
     color: '#1f2937',
@@ -31,14 +34,14 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8 * 2.835 * spacing,
+    marginBottom: 8 * MM * spacing,
   },
   logo: {
     objectFit: 'contain',
   },
   signature: {
     objectFit: 'contain',
-    marginBottom: 1 * 2.835,
+    marginBottom: 1 * MM,
   },
   companyInfo: {
     textAlign: 'right',
@@ -50,23 +53,23 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     marginBottom: 1,
   },
   recipientBox: {
-    width: 85 * 2.835,
-    minHeight: 22 * 2.835 * spacing,
-    marginBottom: 3 * 2.835 * spacing,
+    width: 85 * MM,
+    minHeight: 20 * MM * spacing,
+    marginBottom: 3 * MM * spacing,
   },
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 5 * 2.835 * spacing,
+    marginBottom: 5 * MM * spacing,
   },
   subject: {
     fontSize: fontSize * 1.1,
     fontWeight: 700,
-    marginBottom: 5 * 2.835 * spacing,
+    marginBottom: 5 * MM * spacing,
   },
   warningBanner: {
     backgroundColor: '#fef3c7',
     padding: 6,
-    marginBottom: 3 * 2.835 * spacing,
+    marginBottom: 3 * MM * spacing,
     borderRadius: 3,
   },
   warningText: {
@@ -76,7 +79,7 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     fontWeight: 700,
   },
   bodySection: {
-    marginBottom: 3 * 2.835 * spacing,
+    marginBottom: 3 * MM * spacing,
   },
   bodyText: {
     fontSize: fontSize,
@@ -97,8 +100,8 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     marginBottom: 0.5,
   },
   invoiceDetails: {
-    marginTop: 3 * 2.835 * spacing,
-    marginBottom: 3 * 2.835 * spacing,
+    marginTop: 3 * MM * spacing,
+    marginBottom: 3 * MM * spacing,
     padding: 8,
     backgroundColor: '#f3f4f6',
     borderRadius: 3,
@@ -134,20 +137,20 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
     color: '#dc2626',
   },
   bankSection: {
-    marginTop: 3 * 2.835 * spacing,
-    marginBottom: 3 * 2.835 * spacing,
+    marginTop: 3 * MM * spacing,
+    marginBottom: 3 * MM * spacing,
   },
   closingSection: {
-    marginTop: 5 * 2.835 * spacing,
+    marginTop: 5 * MM * spacing,
     alignItems: 'flex-start',
   },
   closingText: {
     fontSize: fontSize,
-    marginBottom: 3 * 2.835 * spacing,
+    marginBottom: 3 * MM * spacing,
   },
   greeting: {
     fontSize: fontSize,
-    marginBottom: 2 * 2.835,
+    marginBottom: 2 * MM,
   },
   signatureName: {
     fontSize: fontSize,
@@ -155,9 +158,9 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   },
   footer: {
     position: 'absolute',
-    bottom: 12 * 2.835,
-    left: 25 * 2.835,
-    right: 20 * 2.835,
+    bottom: 10 * MM,             // 10mm vom unteren Rand
+    left: 25 * MM,
+    right: 20 * MM,
   },
   footerDivider: {
     borderTopWidth: 0.5,

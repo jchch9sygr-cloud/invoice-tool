@@ -12,6 +12,7 @@ import {
   BorderStyle,
   WidthType,
   HeadingLevel,
+  convertMillimetersToTwip,
 } from 'docx';
 
 function formatCurrency(amount: number): string {
@@ -83,11 +84,24 @@ export async function GET(
 
     const docTypeLabel = doc.type === 'invoice' ? 'Rechnung' : 'Angebot';
 
-    // Build Word document
+    // Build Word document - A4 Format (210 x 297 mm) mit DIN 5008 Rändern
     const wordDoc = new Document({
       sections: [
         {
-          properties: {},
+          properties: {
+            page: {
+              size: {
+                width: convertMillimetersToTwip(210),  // A4 Breite
+                height: convertMillimetersToTwip(297), // A4 Höhe
+              },
+              margin: {
+                top: convertMillimetersToTwip(15),     // 15mm oben
+                bottom: convertMillimetersToTwip(25),  // 25mm unten
+                left: convertMillimetersToTwip(25),    // 25mm links (DIN 5008)
+                right: convertMillimetersToTwip(20),   // 20mm rechts (DIN 5008)
+              },
+            },
+          },
           children: [
             // Header - Company Name
             new Paragraph({

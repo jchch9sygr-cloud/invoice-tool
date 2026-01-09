@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getResend, FROM_EMAIL } from '@/lib/resend';
 import { SimpleReminderEmail } from '@/components/emails/simple-reminder-email';
 import { ReminderPDFServer } from '@/components/pdf/reminder-pdf-server';
+import { InvoicePDFServer } from '@/components/pdf/invoice-pdf-server';
 import { createElement } from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { z } from 'zod';
@@ -104,22 +105,47 @@ export async function POST(
       ? `${levelName.replace(/\. /g, '-').replace(/ /g, '_')}_${document.number}.pdf`
       : `Rechnung_${document.number}.pdf`;
 
-    // Generate PDF
+    // Generate PDF - unterschiedliche Komponente je nach Typ
     let pdfBuffer: Buffer | null = null;
     try {
-      console.log('Generating PDF for', levelName);
+      console.log('Generating PDF for', type === 'reminder' ? levelName : 'Rechnung/Angebot');
 
-      const pdfElement = createElement(ReminderPDFServer, {
-        document: {
-          number: document.number,
-          date: document.date,
-          due_date: document.due_date,
-        },
-        profile: profile || {},
-        customer: document.customer,
-        level: currentLevel,
-        totalAmount,
-      });
+      let pdfElement;
+
+      if (type === 'reminder') {
+        // Mahnung/Zahlungserinnerung
+        pdfElement = createElement(ReminderPDFServer, {
+          document: {
+            number: document.number,
+            date: document.date,
+            due_date: document.due_date,
+          },
+          profile: profile || {},
+          customer: document.customer,
+          level: currentLevel,
+          totalAmount,
+        });
+      } else {
+        // Rechnung oder Angebot
+        pdfElement = createElement(InvoicePDFServer, {
+          document: {
+            number: document.number,
+            date: document.date,
+            type: document.type as 'invoice' | 'quote',
+            location: document.location,
+            salutation: document.salutation,
+            introduction_text: document.introduction_text,
+            notes: document.notes,
+            sender_name: document.sender_name,
+            vat_rate: document.vat_rate,
+            courtage_base_amount: document.courtage_base_amount,
+            courtage_percentage: document.courtage_percentage,
+          },
+          lineItems: document.line_items || [],
+          profile: profile || {},
+          customer: document.customer,
+        });
+      }
 
       // @ts-expect-error - renderToBuffer accepts React elements
       pdfBuffer = await renderToBuffer(pdfElement);

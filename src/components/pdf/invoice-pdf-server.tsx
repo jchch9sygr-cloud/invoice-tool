@@ -8,16 +8,16 @@ import {
   Image,
 } from '@react-pdf/renderer';
 
-// Konstante für mm zu pt Umrechnung (DIN A4)
+// Konstante für mm zu pt Umrechnung (DIN A4: 210 x 297 mm)
 const MM = 2.835;
 
-// DIN 5008 konforme Styles - konsistent mit invoice-pdf.tsx
+// DIN 5008 konforme Styles
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 15 * MM,        // 15mm
-    paddingBottom: 25 * MM,     // 25mm für Footer-Bereich
-    paddingLeft: 25 * MM,       // 25mm DIN 5008
-    paddingRight: 20 * MM,      // 20mm DIN 5008
+    paddingTop: 15 * MM,         // 15mm
+    paddingBottom: 25 * MM,      // 25mm für Footer-Bereich
+    paddingLeft: 25 * MM,        // 25mm (DIN 5008)
+    paddingRight: 20 * MM,       // 20mm (DIN 5008)
     fontSize: 10,
     fontFamily: 'Helvetica',
     color: '#1f2937',
@@ -25,10 +25,14 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8 * MM,       // 8mm
+    marginBottom: 8 * MM,
   },
   logo: {
     objectFit: 'contain',
+  },
+  signature: {
+    objectFit: 'contain',
+    marginBottom: 1 * MM,
   },
   companyInfo: {
     textAlign: 'right',
@@ -40,33 +44,21 @@ const styles = StyleSheet.create({
     marginBottom: 1,
   },
   recipientBox: {
-    width: 85 * MM,             // 85mm DIN 5008
-    minHeight: 20 * MM,         // 20mm
-    marginBottom: 3 * MM,       // 3mm
+    width: 85 * MM,
+    minHeight: 20 * MM,
+    marginBottom: 3 * MM,
   },
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 5 * MM,       // 5mm
+    marginBottom: 5 * MM,
   },
   subject: {
     fontSize: 11,
     fontWeight: 700,
-    marginBottom: 5 * MM,       // 5mm
-  },
-  warningBanner: {
-    backgroundColor: '#fef3c7',
-    padding: 6,
-    marginBottom: 3 * MM,
-    borderRadius: 3,
-  },
-  warningText: {
-    color: '#92400e',
-    fontSize: 8,
-    textAlign: 'center',
-    fontWeight: 700,
+    marginBottom: 5 * MM,
   },
   bodySection: {
-    marginBottom: 3 * MM,       // 3mm
+    marginBottom: 3 * MM,
   },
   bodyText: {
     fontSize: 10,
@@ -86,46 +78,79 @@ const styles = StyleSheet.create({
     fontSize: 8,
     marginBottom: 0.5,
   },
-  invoiceDetails: {
+  table: {
     marginTop: 3 * MM,
     marginBottom: 3 * MM,
-    padding: 8,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 3,
   },
-  detailRow: {
+  tableHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 2,
-  },
-  detailLabel: {
-    fontSize: 9,
-    color: '#6b7280',
-  },
-  detailValue: {
-    fontSize: 10,
+    backgroundColor: '#f3f4f6',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    fontSize: 8,
     fontWeight: 600,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#e5e7eb',
+    fontSize: 10,
+  },
+  colDescription: {
+    width: '75%',
+  },
+  colAmount: {
+    width: '25%',
+    textAlign: 'right',
+  },
+  totalSection: {
+    marginTop: 3 * MM,
+    alignItems: 'flex-end',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 4,
-    paddingTop: 4,
+    width: 280,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    fontSize: 10,
+  },
+  totalRowBorder: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 280,
+    paddingVertical: 3,
+    paddingHorizontal: 4,
     borderTopWidth: 1,
-    borderTopColor: '#d1d5db',
+    borderTopColor: '#1f2937',
+    marginTop: 2,
   },
   totalLabel: {
-    fontSize: 11,
+    fontSize: 10,
+  },
+  totalLabelBold: {
     fontWeight: 700,
+    fontSize: 11,
   },
   totalValue: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#dc2626',
+    fontSize: 10,
   },
-  bankSection: {
+  totalValueBold: {
+    fontWeight: 700,
+    fontSize: 11,
+  },
+  paymentInfo: {
+    marginTop: 5 * MM,
+    fontSize: 10,
+    lineHeight: 1.4,
+  },
+  kleinunternehmer: {
     marginTop: 3 * MM,
-    marginBottom: 3 * MM,
+    fontSize: 8,
+    color: '#6b7280',
+    fontStyle: 'italic',
   },
   closingSection: {
     marginTop: 5 * MM,
@@ -139,18 +164,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginBottom: 2 * MM,
   },
-  signature: {
-    objectFit: 'contain',
-    marginBottom: 1 * MM,
-  },
   signatureName: {
     fontSize: 10,
     fontWeight: 700,
   },
-  // Footer - absolut positioniert im paddingBottom-Bereich
   footer: {
     position: 'absolute',
-    bottom: 10 * MM,            // 10mm vom unteren Rand
+    bottom: 10 * MM,
     left: 25 * MM,
     right: 20 * MM,
   },
@@ -194,12 +214,27 @@ function formatDate(date: string | null): string {
   });
 }
 
-interface ReminderPDFServerProps {
+interface LineItem {
+  description: string;
+  quantity: number;
+  unit_price: number;
+}
+
+interface InvoicePDFServerProps {
   document: {
     number: string;
     date: string;
-    due_date: string | null;
+    type: 'invoice' | 'quote';
+    location?: string | null;
+    salutation?: string | null;
+    introduction_text?: string | null;
+    notes?: string | null;
+    sender_name?: string | null;
+    vat_rate?: number | null;
+    courtage_base_amount?: number | null;
+    courtage_percentage?: number | null;
   };
+  lineItems: LineItem[];
   profile: {
     company_name?: string | null;
     address?: string | null;
@@ -215,6 +250,7 @@ interface ReminderPDFServerProps {
     logo_size?: number | null;
     signature_url?: string | null;
     signature_size?: number | null;
+    is_kleinunternehmer?: boolean | null;
   };
   customer: {
     name?: string | null;
@@ -223,75 +259,30 @@ interface ReminderPDFServerProps {
     zip?: string | null;
     city?: string | null;
   } | null;
-  level: number;
-  totalAmount: number;
 }
 
-export function ReminderPDFServer({
+export function InvoicePDFServer({
   document,
+  lineItems,
   profile,
   customer,
-  level,
-  totalAmount,
-}: ReminderPDFServerProps) {
-  const today = new Date().toLocaleDateString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+}: InvoicePDFServerProps) {
+  // Calculate totals
+  const positionsTotal = lineItems.reduce(
+    (sum, item) => sum + (item.quantity * item.unit_price),
+    0
+  );
 
-  const getLevelTitle = () => {
-    switch (level) {
-      case 0: return 'Zahlungserinnerung';
-      case 1: return '1. Mahnung';
-      case 2: return '2. Mahnung';
-      case 3: return 'Letzte Mahnung';
-      default: return `${level}. Mahnung`;
-    }
-  };
+  const hasCourtage = document.courtage_base_amount != null && document.courtage_percentage != null;
+  const courtageAmount = hasCourtage
+    ? (document.courtage_base_amount! * document.courtage_percentage!) / 100
+    : 0;
 
-  const getSalutation = () => {
-    const name = customer?.name?.toLowerCase() || '';
-    if (name.includes('herr')) return 'Sehr geehrter Herr';
-    if (name.includes('frau')) return 'Sehr geehrte Frau';
-    return 'Sehr geehrte Damen und Herren';
-  };
-
-  const getReminderText = () => {
-    const salutation = getSalutation();
-    switch (level) {
-      case 0:
-        return `${salutation},
-
-wir möchten Sie freundlich daran erinnern, dass die oben genannte Rechnung fällig ist. Bitte überweisen Sie den ausstehenden Betrag auf das unten angegebene Konto.
-
-Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie diese Erinnerung bitte als gegenstandslos.`;
-      case 1:
-        return `${salutation},
-
-bei der Durchsicht unserer Buchhaltung haben wir festgestellt, dass die oben genannte Rechnung trotz unserer Zahlungserinnerung noch nicht beglichen wurde.
-
-Wir bitten Sie, den ausstehenden Betrag innerhalb von 14 Tagen zu überweisen.`;
-      case 2:
-        return `${salutation},
-
-trotz unserer bisherigen Erinnerungen ist der Rechnungsbetrag leider noch nicht auf unserem Konto eingegangen.
-
-Wir fordern Sie hiermit auf, den ausstehenden Betrag innerhalb von 10 Tagen zu begleichen.`;
-      default:
-        return `${salutation},
-
-leider müssen wir feststellen, dass Sie trotz unserer bisherigen Mahnungen den ausstehenden Rechnungsbetrag nicht beglichen haben.
-
-Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen auf unserem Konto eingehen, sehen wir uns gezwungen, rechtliche Schritte einzuleiten.`;
-    }
-  };
-
-  const getClosingText = () => {
-    return level >= 3
-      ? 'Wir erwarten Ihre Zahlung innerhalb von 7 Tagen.'
-      : 'Für Rückfragen stehen wir Ihnen gerne zur Verfügung.';
-  };
+  const netTotal = positionsTotal + courtageAmount;
+  const vatRate = document.vat_rate || 0;
+  const vatAmount = (netTotal * vatRate) / 100;
+  const grossTotal = netTotal + vatAmount;
+  const isInvoice = document.type === 'invoice';
 
   return (
     <Document>
@@ -302,7 +293,7 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
             {profile.logo_url && (
               <Image
                 src={profile.logo_url}
-                style={[styles.logo, { height: Math.min(profile.logo_size || 40, 45) }]}
+                style={[styles.logo, { height: Math.min(profile.logo_size || 45, 45) }]}
               />
             )}
           </View>
@@ -312,6 +303,7 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
             <Text style={styles.textSmall}>{profile.zip} {profile.city}</Text>
             {profile.phone && <Text style={styles.textSmall}>Tel: {profile.phone}</Text>}
             {profile.email && <Text style={styles.textSmall}>{profile.email}</Text>}
+            {profile.tax_number && <Text style={styles.textSmall}>St.-Nr.: {profile.tax_number}</Text>}
           </View>
         </View>
 
@@ -332,59 +324,87 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
         {/* Date */}
         <View style={styles.dateLineRight}>
           <Text style={styles.text}>
-            {profile.city ? `${profile.city}, ` : ''}{today}
+            {document.location ? `${document.location}, ` : ''}{formatDate(document.date)}
           </Text>
         </View>
 
         {/* Subject */}
         <Text style={styles.subject}>
-          {getLevelTitle()} - Rechnung Nr. {document.number}
+          {isInvoice ? 'Rechnung' : 'Angebot'} Nr. {document.number}
         </Text>
-
-        {/* Warning Banner for level 3+ */}
-        {level >= 3 && (
-          <View style={styles.warningBanner}>
-            <Text style={styles.warningText}>
-              LETZTE MAHNUNG VOR EINLEITUNG RECHTLICHER SCHRITTE
-            </Text>
-          </View>
-        )}
 
         {/* Body */}
         <View style={styles.bodySection}>
-          <Text style={styles.bodyText}>{getReminderText()}</Text>
+          <Text style={styles.bodyText}>{document.salutation || 'Sehr geehrte Damen und Herren,'}</Text>
+          {document.introduction_text && (
+            <Text style={styles.bodyText}>{document.introduction_text}</Text>
+          )}
         </View>
 
-        {/* Invoice Details */}
-        <View style={styles.invoiceDetails}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Rechnungsnummer:</Text>
-            <Text style={styles.detailValue}>{document.number}</Text>
+        {/* Table */}
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={styles.colDescription}>Beschreibung</Text>
+            <Text style={styles.colAmount}>Betrag</Text>
           </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Rechnungsdatum:</Text>
-            <Text style={styles.detailValue}>{formatDate(document.date)}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Fälligkeitsdatum:</Text>
-            <Text style={styles.detailValue}>{formatDate(document.due_date)}</Text>
-          </View>
+          {lineItems.map((item, index) => (
+            <View key={index} style={styles.tableRow}>
+              <Text style={styles.colDescription}>{item.description}</Text>
+              <Text style={styles.colAmount}>
+                {formatCurrency(item.quantity * item.unit_price)}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Totals */}
+        <View style={styles.totalSection}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Offener Betrag:</Text>
-            <Text style={styles.totalValue}>{formatCurrency(totalAmount)}</Text>
+            <Text style={styles.totalLabel}>Nettobetrag:</Text>
+            <Text style={styles.totalValue}>{formatCurrency(positionsTotal)}</Text>
+          </View>
+
+          {hasCourtage && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>
+                Courtage ({document.courtage_percentage}%):
+              </Text>
+              <Text style={styles.totalValue}>{formatCurrency(courtageAmount)}</Text>
+            </View>
+          )}
+
+          {vatRate > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>{vatRate}% USt.:</Text>
+              <Text style={styles.totalValue}>{formatCurrency(vatAmount)}</Text>
+            </View>
+          )}
+
+          <View style={styles.totalRowBorder}>
+            <Text style={styles.totalLabelBold}>Gesamtbetrag:</Text>
+            <Text style={styles.totalValueBold}>{formatCurrency(grossTotal)}</Text>
           </View>
         </View>
 
-        {/* Payment Info */}
-        <View style={styles.bankSection}>
-          <Text style={styles.text}>
-            Bitte überweisen Sie den Betrag unter Angabe der Rechnungsnummer {document.number} auf das unten angegebene Konto.
+        {/* Notes */}
+        {document.notes && (
+          <Text style={styles.paymentInfo}>{document.notes}</Text>
+        )}
+
+        {/* Kleinunternehmer */}
+        {profile.is_kleinunternehmer && (
+          <Text style={styles.kleinunternehmer}>
+            Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.
           </Text>
-        </View>
+        )}
 
         {/* Closing */}
         <View style={styles.closingSection}>
-          <Text style={styles.closingText}>{getClosingText()}</Text>
+          <Text style={styles.closingText}>
+            {isInvoice
+              ? 'Wir bedanken uns für die Zusammenarbeit.'
+              : 'Wir freuen uns auf Ihre Rückmeldung.'}
+          </Text>
           <Text style={styles.greeting}>Mit freundlichen Grüßen</Text>
           {profile.signature_url ? (
             <Image
@@ -394,7 +414,9 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
           ) : (
             <View style={{ height: 30, marginTop: 3, marginBottom: 3 }} />
           )}
-          <Text style={styles.signatureName}>{profile.company_name}</Text>
+          <Text style={styles.signatureName}>
+            {document.sender_name || profile.company_name}
+          </Text>
         </View>
 
         {/* Footer */}

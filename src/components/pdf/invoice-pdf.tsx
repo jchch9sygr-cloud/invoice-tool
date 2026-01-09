@@ -11,16 +11,19 @@ import {
 import { formatCurrency, formatDate, getKleinunternehmerText, calculateTotal, calculateVat, calculateGrossTotal } from '@/lib/utils';
 import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@/types/database';
 
+// Konstante für mm zu pt Umrechnung (DIN A4)
+const MM = 2.835;
+
 // Dynamische Styles basierend auf Schriftgröße
 const createStyles = (fontSize: number, compact: boolean = false) => {
-  const spacing = compact ? 0.7 : 1; // Reduziere Abstände wenn kompakt
+  const spacing = compact ? 0.75 : 1; // Reduziere Abstände wenn kompakt
 
   return StyleSheet.create({
   page: {
-    paddingTop: 15 * 2.835,      // 15mm (reduziert)
-    paddingBottom: 18 * 2.835,   // 18mm für Footer
-    paddingLeft: 25 * 2.835,     // 25mm (DIN 5008)
-    paddingRight: 20 * 2.835,    // 20mm (DIN 5008)
+    paddingTop: 15 * MM,         // 15mm
+    paddingBottom: 25 * MM,      // 25mm für Footer-Bereich
+    paddingLeft: 25 * MM,        // 25mm (DIN 5008)
+    paddingRight: 20 * MM,       // 20mm (DIN 5008)
     fontSize: fontSize,
     fontFamily: 'Helvetica',
     color: '#1f2937',
@@ -29,14 +32,14 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8 * 2.835 * spacing,    // 8mm Abstand
+    marginBottom: 8 * MM * spacing,    // 8mm Abstand
   },
   logo: {
     objectFit: 'contain',
   },
   signature: {
     objectFit: 'contain',
-    marginBottom: 1 * 2.835,
+    marginBottom: 1 * MM,
   },
   companyInfo: {
     textAlign: 'right',
@@ -51,31 +54,31 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   senderLine: {
     fontSize: fontSize * 0.6,
     color: '#6b7280',
-    marginBottom: 1.5 * 2.835,
-    paddingBottom: 0.5 * 2.835,
+    marginBottom: 1.5 * MM,
+    paddingBottom: 0.5 * MM,
     borderBottomWidth: 0.5,
     borderBottomColor: '#9ca3af',
   },
   // Empfängerfeld nach DIN 5008
   recipientBox: {
-    width: 85 * 2.835,
-    minHeight: 22 * 2.835 * spacing,     // Reduziert
-    marginBottom: 3 * 2.835 * spacing,
+    width: 85 * MM,
+    minHeight: 22 * MM * spacing,     // Reduziert
+    marginBottom: 3 * MM * spacing,
   },
   // Ort, Datum rechts ausgerichtet
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 6 * 2.835 * spacing,
+    marginBottom: 6 * MM * spacing,
   },
   // Betreff (fett, nach DIN 5008)
   subject: {
     fontSize: fontSize * 1.1,
     fontWeight: 700,
-    marginBottom: 6 * 2.835 * spacing,
+    marginBottom: 6 * MM * spacing,
   },
   // Brieftext
   bodySection: {
-    marginBottom: 3 * 2.835 * spacing,
+    marginBottom: 3 * MM * spacing,
   },
   bodyText: {
     fontSize: fontSize,
@@ -97,8 +100,8 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   },
   // Positionstabelle
   table: {
-    marginTop: 3 * 2.835 * spacing,
-    marginBottom: 3 * 2.835 * spacing,
+    marginTop: 3 * MM * spacing,
+    marginBottom: 3 * MM * spacing,
   },
   tableHeader: {
     flexDirection: 'row',
@@ -125,7 +128,7 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   },
   // Summenblock rechts
   totalSection: {
-    marginTop: 3 * 2.835 * spacing,
+    marginTop: 3 * MM * spacing,
     alignItems: 'flex-end',
   },
   totalRow: {
@@ -162,39 +165,39 @@ const createStyles = (fontSize: number, compact: boolean = false) => {
   },
   // Zahlungshinweis
   paymentInfo: {
-    marginTop: 6 * 2.835 * spacing,
+    marginTop: 6 * MM * spacing,
     fontSize: fontSize,
     lineHeight: 1.4,
   },
   kleinunternehmer: {
-    marginTop: 3 * 2.835 * spacing,
+    marginTop: 3 * MM * spacing,
     fontSize: fontSize * 0.8,
     color: '#6b7280',
     fontStyle: 'italic',
   },
   // Grußformel (DIN 5008: 1 Leerzeile vor Gruß)
   closingSection: {
-    marginTop: 6 * 2.835 * spacing,
+    marginTop: 6 * MM * spacing,
     alignItems: 'flex-start',
   },
   closingText: {
     fontSize: fontSize,
-    marginBottom: 3 * 2.835 * spacing,
+    marginBottom: 3 * MM * spacing,
   },
   greeting: {
     fontSize: fontSize,
-    marginBottom: 2 * 2.835,
+    marginBottom: 2 * MM,
   },
   signatureName: {
     fontSize: fontSize,
     fontWeight: 700,
   },
-  // Fußzeile
+  // Fußzeile - absolut positioniert im paddingBottom-Bereich
   footer: {
     position: 'absolute',
-    bottom: 12 * 2.835,
-    left: 25 * 2.835,
-    right: 20 * 2.835,
+    bottom: 10 * MM,             // 10mm vom unteren Rand
+    left: 25 * MM,
+    right: 20 * MM,
   },
   footerDivider: {
     borderTopWidth: 0.5,
