@@ -11,16 +11,17 @@ import {
 import { formatCurrency, formatDate, getKleinunternehmerText, calculateTotal, calculateVat, calculateGrossTotal } from '@/lib/utils';
 import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@/types/database';
 
-// DIN 5008 Briefstandard - Maße in Punkten (1mm = 2.835pt)
-// Seitenränder: Links 25mm, Rechts 20mm, Oben 20mm, Unten 20mm
-// Anschriftfeld: 45mm vom oberen Rand, 85mm breit, 45mm hoch
-const styles = StyleSheet.create({
+// Dynamische Styles basierend auf Schriftgröße
+const createStyles = (fontSize: number, compact: boolean = false) => {
+  const spacing = compact ? 0.7 : 1; // Reduziere Abstände wenn kompakt
+
+  return StyleSheet.create({
   page: {
-    paddingTop: 20 * 2.835,      // 20mm
-    paddingBottom: 20 * 2.835,   // 20mm
+    paddingTop: 15 * 2.835,      // 15mm (reduziert)
+    paddingBottom: 18 * 2.835,   // 18mm für Footer
     paddingLeft: 25 * 2.835,     // 25mm (DIN 5008)
     paddingRight: 20 * 2.835,    // 20mm (DIN 5008)
-    fontSize: 10,
+    fontSize: fontSize,
     fontFamily: 'Helvetica',
     color: '#1f2937',
   },
@@ -28,92 +29,92 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10 * 2.835,    // 10mm Abstand
+    marginBottom: 8 * 2.835 * spacing,    // 8mm Abstand
   },
   logo: {
     objectFit: 'contain',
   },
   signature: {
     objectFit: 'contain',
-    marginBottom: 2 * 2.835,
+    marginBottom: 1 * 2.835,
   },
   companyInfo: {
     textAlign: 'right',
-    fontSize: 8,
+    fontSize: fontSize * 0.8,
   },
   companyName: {
-    fontSize: 10,
+    fontSize: fontSize,
     fontWeight: 700,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   // Rücksendezeile (klein, über Empfänger)
   senderLine: {
-    fontSize: 6,
+    fontSize: fontSize * 0.6,
     color: '#6b7280',
-    marginBottom: 2 * 2.835,     // 2mm
-    paddingBottom: 1 * 2.835,    // 1mm
+    marginBottom: 1.5 * 2.835,
+    paddingBottom: 0.5 * 2.835,
     borderBottomWidth: 0.5,
     borderBottomColor: '#9ca3af',
   },
   // Empfängerfeld nach DIN 5008
   recipientBox: {
-    width: 85 * 2.835,           // 85mm Breite (DIN 5008)
-    minHeight: 27.3 * 2.835,     // Mindesthöhe Anschriftzone
-    marginBottom: 4 * 2.835,     // 4mm Abstand
+    width: 85 * 2.835,
+    minHeight: 22 * 2.835 * spacing,     // Reduziert
+    marginBottom: 3 * 2.835 * spacing,
   },
   // Ort, Datum rechts ausgerichtet
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 8.46 * 2.835,  // 2 Leerzeilen vor Betreff
+    marginBottom: 6 * 2.835 * spacing,
   },
   // Betreff (fett, nach DIN 5008)
   subject: {
-    fontSize: 11,
+    fontSize: fontSize * 1.1,
     fontWeight: 700,
-    marginBottom: 8.46 * 2.835,  // 2 Leerzeilen nach Betreff
+    marginBottom: 6 * 2.835 * spacing,
   },
   // Brieftext
   bodySection: {
-    marginBottom: 4.23 * 2.835,  // 1 Leerzeile ~ 4.23mm
+    marginBottom: 3 * 2.835 * spacing,
   },
   bodyText: {
-    fontSize: 10,
-    lineHeight: 1.5,             // DIN 5008: 1-zeilig mit 1,5 Zeilenabstand
-    marginBottom: 2,
+    fontSize: fontSize,
+    lineHeight: 1.4,
+    marginBottom: 1,
   },
   text: {
-    fontSize: 10,
-    marginBottom: 1,
+    fontSize: fontSize,
+    marginBottom: 0.5,
   },
   textBold: {
-    fontSize: 10,
+    fontSize: fontSize,
     fontWeight: 700,
-    marginBottom: 1,
+    marginBottom: 0.5,
   },
   textSmall: {
-    fontSize: 8,
-    marginBottom: 1,
+    fontSize: fontSize * 0.8,
+    marginBottom: 0.5,
   },
   // Positionstabelle
   table: {
-    marginTop: 4.23 * 2.835,     // 1 Leerzeile
-    marginBottom: 4.23 * 2.835,
+    marginTop: 3 * 2.835 * spacing,
+    marginBottom: 3 * 2.835 * spacing,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#f3f4f6',
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingHorizontal: 4,
-    fontSize: 8,
+    fontSize: fontSize * 0.8,
     fontWeight: 600,
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingHorizontal: 4,
     borderBottomWidth: 0.5,
     borderBottomColor: '#e5e7eb',
-    fontSize: 10,
+    fontSize: fontSize,
   },
   colDescription: {
     width: '75%',
@@ -124,86 +125,86 @@ const styles = StyleSheet.create({
   },
   // Summenblock rechts
   totalSection: {
-    marginTop: 4.23 * 2.835,
+    marginTop: 3 * 2.835 * spacing,
     alignItems: 'flex-end',
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: 320,
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    fontSize: 10,
+    width: 280,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    fontSize: fontSize,
   },
   totalRowBorder: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: 320,
-    paddingVertical: 5,
-    paddingHorizontal: 6,
+    width: 280,
+    paddingVertical: 3,
+    paddingHorizontal: 4,
     borderTopWidth: 1,
     borderTopColor: '#1f2937',
-    marginTop: 3,
+    marginTop: 2,
   },
   totalLabel: {
-    fontSize: 10,
+    fontSize: fontSize,
   },
   totalLabelBold: {
     fontWeight: 700,
-    fontSize: 11,
+    fontSize: fontSize * 1.1,
   },
   totalValue: {
-    fontSize: 10,
+    fontSize: fontSize,
   },
   totalValueBold: {
     fontWeight: 700,
-    fontSize: 11,
+    fontSize: fontSize * 1.1,
   },
   // Zahlungshinweis
   paymentInfo: {
-    marginTop: 8.46 * 2.835,     // 2 Leerzeilen
-    fontSize: 10,
-    lineHeight: 1.5,
+    marginTop: 6 * 2.835 * spacing,
+    fontSize: fontSize,
+    lineHeight: 1.4,
   },
   kleinunternehmer: {
-    marginTop: 4.23 * 2.835,
-    fontSize: 8,
+    marginTop: 3 * 2.835 * spacing,
+    fontSize: fontSize * 0.8,
     color: '#6b7280',
     fontStyle: 'italic',
   },
   // Grußformel (DIN 5008: 1 Leerzeile vor Gruß)
   closingSection: {
-    marginTop: 8.46 * 2.835,     // 2 Leerzeilen
-    alignItems: 'flex-start',    // Links ausrichten
+    marginTop: 6 * 2.835 * spacing,
+    alignItems: 'flex-start',
   },
   closingText: {
-    fontSize: 10,
-    marginBottom: 4.23 * 2.835,  // 1 Leerzeile
+    fontSize: fontSize,
+    marginBottom: 3 * 2.835 * spacing,
   },
   greeting: {
-    fontSize: 10,
-    marginBottom: 3 * 2.835,     // Weniger Abstand wenn Unterschrift folgt
+    fontSize: fontSize,
+    marginBottom: 2 * 2.835,
   },
   signatureName: {
-    fontSize: 10,
+    fontSize: fontSize,
     fontWeight: 700,
   },
   // Fußzeile
   footer: {
     position: 'absolute',
-    bottom: 15 * 2.835,          // 15mm vom unteren Rand
+    bottom: 12 * 2.835,
     left: 25 * 2.835,
     right: 20 * 2.835,
   },
   footerDivider: {
     borderTopWidth: 0.5,
     borderTopColor: '#d1d5db',
-    paddingTop: 6,
+    paddingTop: 4,
   },
   footerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    fontSize: 7,
+    fontSize: 6.5,
     color: '#6b7280',
   },
   footerSection: {
@@ -215,9 +216,10 @@ const styles = StyleSheet.create({
   },
   footerLabel: {
     fontWeight: 700,
-    marginBottom: 1,
+    marginBottom: 0.5,
   },
 });
+};
 
 interface InvoicePDFProps {
   document: InvoiceDocument;
@@ -245,16 +247,36 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
   const grossTotal = netTotal + vatAmount;
   const isInvoice = document.type === 'invoice';
 
+  // Dynamische Schriftgröße basierend auf Inhaltsmenge
+  const introLength = (document.introduction_text || '').length;
+  const notesLength = (document.notes || '').length;
+  const itemCount = lineItems.length;
+  const totalContentLength = introLength + notesLength + (itemCount * 30);
+
+  // Berechne optimale Schriftgröße und ob kompakt
+  let fontSize = 10;
+  let compact = false;
+
+  if (itemCount > 8 || totalContentLength > 600) {
+    fontSize = 8;
+    compact = true;
+  } else if (itemCount > 5 || totalContentLength > 400) {
+    fontSize = 9;
+    compact = true;
+  }
+
+  const styles = createStyles(fontSize, compact);
+
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} wrap={false}>
         {/* Kopfbereich: Logo links, Absenderdaten rechts */}
         <View style={styles.header}>
           <View>
             {profile.logo_url && (
               <Image
                 src={profile.logo_url}
-                style={[styles.logo, { height: profile.logo_size || 60 }]}
+                style={[styles.logo, { height: Math.min(profile.logo_size || 50, compact ? 40 : 50) }]}
               />
             )}
           </View>
@@ -372,11 +394,11 @@ export function InvoicePDF({ document, lineItems, profile, customer }: InvoicePD
           {profile.signature_url ? (
             <Image
               src={profile.signature_url}
-              style={[styles.signature, { height: profile.signature_size || 50 }]}
+              style={[styles.signature, { height: Math.min(profile.signature_size || 40, compact ? 30 : 40) }]}
             />
           ) : (
             /* Platz für handschriftliche Unterschrift */
-            <View style={{ height: 50, marginTop: 8, marginBottom: 8 }} />
+            <View style={{ height: compact ? 25 : 35, marginTop: 4, marginBottom: 4 }} />
           )}
           <Text style={styles.signatureName}>
             {document.sender_name || profile.company_name}

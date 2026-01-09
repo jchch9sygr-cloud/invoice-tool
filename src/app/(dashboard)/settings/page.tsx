@@ -1065,21 +1065,22 @@ export default function SettingsPage() {
                     </div>
                   );
                 })()}
+
+                {/* Speichern Button innerhalb der Box */}
+                <div className="mt-6 pt-4 border-t border-gray-700/50 flex items-center gap-3">
+                  <Button type="submit" loading={loading}>
+                    Einstellungen speichern
+                  </Button>
+                  {saved && (
+                    <span className="flex items-center gap-1 text-sm text-green-500">
+                      <Check className="h-4 w-4" />
+                      Gespeichert
+                    </span>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
-
-          <div className="flex items-center gap-3">
-            <Button type="submit" loading={loading}>
-              Speichern
-            </Button>
-            {saved && (
-              <span className="flex items-center gap-1 text-sm text-green-600">
-                <Check className="h-4 w-4" />
-                Gespeichert
-              </span>
-            )}
-          </div>
         </form>
           </div>
 

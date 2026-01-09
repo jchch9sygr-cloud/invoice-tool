@@ -15,10 +15,13 @@ import type { Document as InvoiceDocument, LineItem, Profile, Customer } from '@
 const BASE_FONT_SIZE = 10;
 
 // DIN 5008 Briefstandard - konsistent mit invoice-pdf.tsx
-const createStyles = (fontSize: number) => StyleSheet.create({
+const createStyles = (fontSize: number, compact: boolean = false) => {
+  const spacing = compact ? 0.7 : 1;
+
+  return StyleSheet.create({
   page: {
-    paddingTop: 20 * 2.835,      // 20mm (DIN 5008)
-    paddingBottom: 20 * 2.835,   // 20mm
+    paddingTop: 15 * 2.835,      // 15mm (reduziert)
+    paddingBottom: 18 * 2.835,   // 18mm für Footer
     paddingLeft: 25 * 2.835,     // 25mm (DIN 5008)
     paddingRight: 20 * 2.835,    // 20mm (DIN 5008)
     fontSize: fontSize,
@@ -28,14 +31,14 @@ const createStyles = (fontSize: number) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10 * 2.835,    // 10mm (wie Rechnung)
+    marginBottom: 8 * 2.835 * spacing,
   },
   logo: {
     objectFit: 'contain',
   },
   signature: {
     objectFit: 'contain',
-    marginBottom: 2 * 2.835,
+    marginBottom: 1 * 2.835,
   },
   companyInfo: {
     textAlign: 'right',
@@ -44,26 +47,26 @@ const createStyles = (fontSize: number) => StyleSheet.create({
   companyName: {
     fontSize: fontSize,
     fontWeight: 700,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   recipientBox: {
-    width: 85 * 2.835,           // 85mm (DIN 5008)
-    minHeight: 27.3 * 2.835,     // Mindesthöhe (wie Rechnung)
-    marginBottom: 4 * 2.835,     // 4mm
+    width: 85 * 2.835,
+    minHeight: 22 * 2.835 * spacing,
+    marginBottom: 3 * 2.835 * spacing,
   },
   dateLineRight: {
     textAlign: 'right',
-    marginBottom: 8.46 * 2.835,  // 2 Leerzeilen (wie Rechnung)
+    marginBottom: 5 * 2.835 * spacing,
   },
   subject: {
     fontSize: fontSize * 1.1,
     fontWeight: 700,
-    marginBottom: 8.46 * 2.835,  // 2 Leerzeilen (wie Rechnung)
+    marginBottom: 5 * 2.835 * spacing,
   },
   warningBanner: {
     backgroundColor: '#fef3c7',
-    padding: 8,
-    marginBottom: 4.23 * 2.835,  // 1 Leerzeile
+    padding: 6,
+    marginBottom: 3 * 2.835 * spacing,
     borderRadius: 3,
   },
   warningText: {
@@ -73,37 +76,37 @@ const createStyles = (fontSize: number) => StyleSheet.create({
     fontWeight: 700,
   },
   bodySection: {
-    marginBottom: 4.23 * 2.835,  // 1 Leerzeile (wie Rechnung)
+    marginBottom: 3 * 2.835 * spacing,
   },
   bodyText: {
     fontSize: fontSize,
-    lineHeight: 1.5,             // DIN 5008 Zeilenabstand
-    marginBottom: 2,
+    lineHeight: 1.4,
+    marginBottom: 1,
   },
   text: {
     fontSize: fontSize,
-    marginBottom: 1,
+    marginBottom: 0.5,
   },
   textBold: {
     fontSize: fontSize,
     fontWeight: 700,
-    marginBottom: 1,
+    marginBottom: 0.5,
   },
   textSmall: {
     fontSize: fontSize * 0.8,
-    marginBottom: 1,
+    marginBottom: 0.5,
   },
   invoiceDetails: {
-    marginTop: 4.23 * 2.835,
-    marginBottom: 4.23 * 2.835,
-    padding: 10,
+    marginTop: 3 * 2.835 * spacing,
+    marginBottom: 3 * 2.835 * spacing,
+    padding: 8,
     backgroundColor: '#f3f4f6',
     borderRadius: 3,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 3,
+    marginBottom: 2,
   },
   detailLabel: {
     fontSize: fontSize * 0.9,
@@ -116,8 +119,8 @@ const createStyles = (fontSize: number) => StyleSheet.create({
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 6,
-    paddingTop: 6,
+    marginTop: 4,
+    paddingTop: 4,
     borderTopWidth: 1,
     borderTopColor: '#d1d5db',
   },
@@ -126,26 +129,25 @@ const createStyles = (fontSize: number) => StyleSheet.create({
     fontWeight: 700,
   },
   totalValue: {
-    fontSize: fontSize * 1.2,
+    fontSize: fontSize * 1.1,
     fontWeight: 700,
     color: '#dc2626',
   },
   bankSection: {
-    marginTop: 4.23 * 2.835,
-    marginBottom: 4.23 * 2.835,
+    marginTop: 3 * 2.835 * spacing,
+    marginBottom: 3 * 2.835 * spacing,
   },
-  // Grußformel (DIN 5008: konsistent mit Rechnung)
   closingSection: {
-    marginTop: 8.46 * 2.835,     // 2 Leerzeilen (wie Rechnung)
+    marginTop: 5 * 2.835 * spacing,
     alignItems: 'flex-start',
   },
   closingText: {
     fontSize: fontSize,
-    marginBottom: 4.23 * 2.835,  // 1 Leerzeile
+    marginBottom: 3 * 2.835 * spacing,
   },
   greeting: {
     fontSize: fontSize,
-    marginBottom: 3 * 2.835,     // Weniger Abstand wenn Unterschrift folgt
+    marginBottom: 2 * 2.835,
   },
   signatureName: {
     fontSize: fontSize,
@@ -153,19 +155,19 @@ const createStyles = (fontSize: number) => StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 15 * 2.835,          // 15mm (wie Rechnung)
+    bottom: 12 * 2.835,
     left: 25 * 2.835,
     right: 20 * 2.835,
   },
   footerDivider: {
     borderTopWidth: 0.5,
     borderTopColor: '#d1d5db',
-    paddingTop: 6,
+    paddingTop: 4,
   },
   footerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    fontSize: fontSize * 0.7,
+    fontSize: 6.5,
     color: '#6b7280',
   },
   footerSection: {
@@ -177,9 +179,10 @@ const createStyles = (fontSize: number) => StyleSheet.create({
   },
   footerLabel: {
     fontWeight: 700,
-    marginBottom: 1,
+    marginBottom: 0.5,
   },
 });
+};
 
 interface ReminderPDFProps {
   document: InvoiceDocument;
@@ -265,24 +268,28 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
   // Calculate font size based on text length - smaller font for longer text
   const textLength = reminderText.length + closingText.length;
   let fontSize = BASE_FONT_SIZE;
-  if (textLength > 800) {
+  let compact = false;
+
+  if (textLength > 700) {
     fontSize = 8;
-  } else if (textLength > 600) {
+    compact = true;
+  } else if (textLength > 500) {
     fontSize = 9;
+    compact = true;
   }
 
-  const styles = createStyles(fontSize);
+  const styles = createStyles(fontSize, compact);
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} wrap={false}>
         {/* Header */}
         <View style={styles.header}>
           <View>
             {profile.logo_url && (
               <Image
                 src={profile.logo_url}
-                style={[styles.logo, { height: Math.min(profile.logo_size || 50, 50) }]}
+                style={[styles.logo, { height: Math.min(profile.logo_size || 45, compact ? 35 : 45) }]}
               />
             )}
           </View>
@@ -379,11 +386,11 @@ Dies ist unsere letzte Mahnung. Sollte der Betrag nicht innerhalb von 7 Tagen au
           {profile.signature_url ? (
             <Image
               src={profile.signature_url}
-              style={[styles.signature, { height: profile.signature_size || 50 }]}
+              style={[styles.signature, { height: Math.min(profile.signature_size || 40, compact ? 30 : 40) }]}
             />
           ) : (
             /* Platz für handschriftliche Unterschrift */
-            <View style={{ height: 50, marginTop: 8, marginBottom: 8 }} />
+            <View style={{ height: compact ? 25 : 35, marginTop: 4, marginBottom: 4 }} />
           )}
           <Text style={styles.signatureName}>{profile.company_name}</Text>
         </View>
