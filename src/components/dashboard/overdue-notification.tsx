@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalHeader, ModalBody, ModalFooter } from '@/components/ui/modal';
-import { AlertTriangle, Mail, X, Send, Clock, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Mail, X, Send, Clock, ExternalLink, Bell, FileText, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -25,6 +25,13 @@ interface OverdueInvoice {
   courtage_percentage: number | null;
   reminder_count: number;
   last_reminder_date: string | null;
+}
+
+interface ReminderSettings {
+  reminder_days_first: number;
+  reminder_days_second: number;
+  reminder_days_third: number;
+  reminder_days_final: number;
 }
 
 function calculateTotal(invoice: OverdueInvoice): number {
@@ -90,36 +97,66 @@ export function OverdueNotification() {
   const [overdueInvoices, setOverdueInvoices] = useState<OverdueInvoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<OverdueInvoice | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [dismissed, setDismissed] = useState<string[]>([]);
+  const [settings, setSettings] = useState<ReminderSettings>({
+    reminder_days_first: 7,
+    reminder_days_second: 14,
+    reminder_days_third: 14,
+    reminder_days_final: 7,
+  });
 
-  useEffect(() => {
-    loadOverdueInvoices();
-  }, []);
-
-  const loadOverdueInvoices = async () => {
+  const loadOverdueInvoices = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const today = new Date().toISOString().split('T')[0];
 
-    const { data, error } = await supabase
-      .from('documents')
-      .select('id, number, date, due_date, vat_rate, courtage_base_amount, courtage_percentage, reminder_count, last_reminder_date, customer:customers(id, name, email), line_items(*)')
-      .eq('user_id', user.id)
-      .eq('type', 'invoice')
-      .in('status', ['draft', 'sent'])
-      .lt('due_date', today)
-      .order('due_date', { ascending: true });
+    // Lade Einstellungen und Rechnungen parallel
+    const [{ data: profileData }, { data, error }] = await Promise.all([
+      supabase.from('profiles').select('reminder_days_first, reminder_days_second, reminder_days_third, reminder_days_final').eq('user_id', user.id).single(),
+      supabase
+        .from('documents')
+        .select('id, number, date, due_date, vat_rate, courtage_base_amount, courtage_percentage, reminder_count, last_reminder_date, customer:customers(id, name, email), line_items(*)')
+        .eq('user_id', user.id)
+        .eq('type', 'invoice')
+        .in('status', ['draft', 'sent'])
+        .lt('due_date', today)
+        .order('due_date', { ascending: true }),
+    ]);
+
+    if (profileData) {
+      setSettings({
+        reminder_days_first: profileData.reminder_days_first ?? 7,
+        reminder_days_second: profileData.reminder_days_second ?? 14,
+        reminder_days_third: profileData.reminder_days_third ?? 14,
+        reminder_days_final: profileData.reminder_days_final ?? 7,
+      });
+    }
 
     if (!error && data) {
       // Nur Rechnungen zeigen, bei denen eine Mahnung/Erinnerung fällig ist
       const dueInvoices = (data as unknown as OverdueInvoice[]).filter(isReminderDue);
       setOverdueInvoices(dueInvoices);
+
+      // Popup automatisch anzeigen wenn überfällige Rechnungen vorhanden
+      // Aber nur einmal pro Session (localStorage check)
+      const sessionKey = `overdue_popup_shown_${new Date().toDateString()}`;
+      if (dueInvoices.length > 0 && !sessionStorage.getItem(sessionKey)) {
+        setTimeout(() => {
+          setShowPopup(true);
+          sessionStorage.setItem(sessionKey, 'true');
+        }, 1000); // Kurze Verzögerung für bessere UX
+      }
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    loadOverdueInvoices();
+  }, [loadOverdueInvoices]);
 
   const handleOpenReminder = (invoice: OverdueInvoice) => {
     setSelectedInvoice(invoice);
@@ -178,7 +215,93 @@ export function OverdueNotification() {
 
   return (
     <>
-      {/* Notification Banner */}
+      {/* Automatisches Popup für überfällige Rechnungen */}
+      <Modal isOpen={showPopup} onClose={() => setShowPopup(false)}>
+        <ModalHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-yellow-500/20 rounded-xl">
+              <Bell className="h-6 w-6 text-yellow-400" />
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-white">Zahlungserinnerung fällig</h3>
+              <p className="text-sm text-gray-400">
+                {visibleInvoices.length === 1
+                  ? '1 Rechnung ist überfällig'
+                  : `${visibleInvoices.length} Rechnungen sind überfällig`}
+              </p>
+            </div>
+          </div>
+        </ModalHeader>
+        <ModalBody>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto">
+            {visibleInvoices.slice(0, 5).map((invoice) => {
+              const days = getDaysOverdue(invoice.due_date);
+              const level = getReminderLevel(invoice);
+              return (
+                <div
+                  key={invoice.id}
+                  className="p-4 bg-gray-800 rounded-xl border border-gray-700 hover:border-yellow-600/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-blue-400" />
+                      <span className="font-semibold text-white">{invoice.number}</span>
+                    </div>
+                    <span className="text-lg font-bold text-white">
+                      {formatCurrency(calculateTotal(invoice))}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">{invoice.customer?.name || 'Kein Kunde'}</span>
+                    <span className={`font-medium ${days > 14 ? 'text-red-400' : 'text-yellow-400'}`}>
+                      {days} Tage überfällig
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-3">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      level.level === 0 ? 'bg-cyan-900/50 text-cyan-400' :
+                      level.level === 1 ? 'bg-yellow-900/50 text-yellow-400' :
+                      level.level === 2 ? 'bg-orange-900/50 text-orange-400' :
+                      'bg-red-900/50 text-red-400'
+                    }`}>
+                      Nächster Schritt: {level.label}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setShowPopup(false);
+                        handleOpenReminder(invoice);
+                      }}
+                    >
+                      <Mail className="h-3 w-3 mr-1" />
+                      Senden
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+            {visibleInvoices.length > 5 && (
+              <p className="text-center text-sm text-gray-500">
+                + {visibleInvoices.length - 5} weitere überfällige Rechnungen
+              </p>
+            )}
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="ghost" onClick={() => setShowPopup(false)}>
+            Später erinnern
+          </Button>
+          <Link href="/reminders">
+            <Button onClick={() => setShowPopup(false)}>
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Mahnwesen öffnen
+            </Button>
+          </Link>
+        </ModalFooter>
+      </Modal>
+
+      {/* Notification Banner (weiterhin angezeigt) */}
       <div className={`rounded-xl border p-4 ${
         isUrgent
           ? 'bg-red-900/30 border-red-800'
